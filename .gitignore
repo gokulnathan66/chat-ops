@@ -1,0 +1,10 @@
+.env
+*.lock
+.venv/
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+.DS_Store
+logs/
+archives/
