@@ -1,25 +1,29 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
+
 
 class Settings(BaseSettings):
-    #llm
-    MODEL_ID = os.getenv("MODEL", "gpt-3.5-turbo") 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+        case_sensitive=False,
+    )
 
-    #qdrant settings
-    QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
-    QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
-    QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "my_qdrant_api_key")
-    QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "llmops-rag")
+    # llm
+    MODEL_ID: str = "gpt-3.5-turbo"
 
-    #storage settings
-    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "my-llmops-bucket")
-    
-    #embedding settings
+    # qdrant settings
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_API_KEY: str = "my_qdrant_api_key"
+    QDRANT_COLLECTION: str = "llmops-rag"
 
-    #feature flags
-
+    # storage settings
+    S3_BUCKET_NAME: str = "my-llmops-bucket"
 
 
+    #feature flags 
 
 
+    # general configs 
+    AWS_REGION: str = "us-east-1"
 settings = Settings()

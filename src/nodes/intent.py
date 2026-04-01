@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from states.config import GraphState
+from src.states.config import GraphState
 from src.services.bedrock import BedrockConverseService
 from typing import Literal
 from langgraph.types import Command

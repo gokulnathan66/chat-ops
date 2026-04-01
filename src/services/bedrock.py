@@ -15,8 +15,8 @@ class BedrockConverseService:
         model_id: str | None = None,
         region_name: str | None = None,
     ) -> None:
-        self.model_id = model_id or settings.bedrock_model_id
-        self.region_name = region_name or settings.aws_region
+        self.model_id = model_id or settings.MODEL_ID
+        self.region_name = region_name or settings.AWS_REGION
         self.client = boto3.client("bedrock-runtime", region_name=self.region_name)
 
     def _build_message(self, role: str, text: str) -> dict[str, Any]:
@@ -32,7 +32,6 @@ class BedrockConverseService:
         system_prompt: str | None = None,
         messages: list[dict[str, Any]] | None = None,
         temperature: float = 0.2,
-        top_p: float = 0.9,
         max_tokens: int = 1024,
         tool_config: dict[str, Any] | None = None,
         additional_model_request_fields: dict[str, Any] | None = None,
@@ -46,7 +45,6 @@ class BedrockConverseService:
             "inferenceConfig": {
                 "maxTokens": max_tokens,
                 "temperature": temperature,
-                "topP": top_p,
             },
         }
 
@@ -75,7 +73,6 @@ class BedrockConverseService:
         system_prompt: str | None = None,
         messages: list[dict[str, Any]] | None = None,
         temperature: float = 0.2,
-        top_p: float = 0.9,
         max_tokens: int = 1024,
         tool_config: dict[str, Any] | None = None,
         additional_model_request_fields: dict[str, Any] | None = None,
@@ -85,7 +82,6 @@ class BedrockConverseService:
             system_prompt=system_prompt,
             messages=messages,
             temperature=temperature,
-            top_p=top_p,
             max_tokens=max_tokens,
             tool_config=tool_config,
             additional_model_request_fields=additional_model_request_fields,
@@ -102,7 +98,6 @@ class BedrockConverseService:
         system_prompt: str | None = None,
         messages: list[dict[str, Any]] | None = None,
         temperature: float = 0.2,
-        top_p: float = 0.9,
         max_tokens: int = 1024,
         tool_config: dict[str, Any] | None = None,
         additional_model_request_fields: dict[str, Any] | None = None,
@@ -116,7 +111,6 @@ class BedrockConverseService:
             "inferenceConfig": {
                 "maxTokens": max_tokens,
                 "temperature": temperature,
-                "topP": top_p,
             },
         }
 
@@ -150,7 +144,6 @@ class BedrockConverseService:
         tool_handlers: dict[str, Any],
         system_prompt: str | None = None,
         temperature: float = 0.2,
-        top_p: float = 0.9,
         max_tokens: int = 1024,
     ) -> dict[str, Any]:
         messages: list[dict[str, Any]] = [
@@ -164,7 +157,6 @@ class BedrockConverseService:
             "inferenceConfig": {
                 "maxTokens": max_tokens,
                 "temperature": temperature,
-                "topP": top_p,
             },
         }
 
@@ -229,7 +221,6 @@ class BedrockConverseService:
                     inferenceConfig={
                         "maxTokens": max_tokens,
                         "temperature": temperature,
-                        "topP": top_p,
                     },
                     **({"system": [{"text": system_prompt}]} if system_prompt else {}),
                 )
@@ -258,7 +249,6 @@ class BedrockConverseService:
         system_prompt: str | None = None,
         messages: list[dict[str, Any]] | None = None,
         temperature: float = 0.0,
-        top_p: float = 0.9,
         max_tokens: int = 512,
         additional_model_request_fields: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
@@ -271,7 +261,6 @@ class BedrockConverseService:
             "inferenceConfig": {
                 "maxTokens": max_tokens,
                 "temperature": temperature,
-                "topP": top_p,
             },
             "outputConfig": {
                 "textFormat": {

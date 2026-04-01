@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Literal
-from pydantic import BaseModel, Field
+from typing import Any
+
 
 
 class SemanticSearchInput(BaseModel):
@@ -24,3 +25,13 @@ class IntentRoute(BaseModel):
     reason: str = Field(
         description="Short explanation for why this route was chosen"
     )
+
+
+class GraphInvokeRequest(BaseModel):
+    user_query: str = Field(..., description="User input for the graph")
+    messages: list[dict[str, Any]] = Field(default_factory=list)
+    message: str = Field(default="")
+
+
+class GraphInvokeResponse(BaseModel):
+    result: dict[str, Any]

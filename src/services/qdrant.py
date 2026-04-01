@@ -20,8 +20,8 @@ from src.setting.config import settings
 class QdrantService:
     def __init__(self) -> None:
         self.client = QdrantClient(
-            url=settings.qdrant_url,
-            api_key=settings.qdrant_api_key,
+            url=settings.QDRANT_HOST,
+            api_key=settings.QDRANT_API_KEY,
         )
 
     def ensure_collection(self) -> None:

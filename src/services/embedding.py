@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sentence_transformers import SentenceTransformer
 
-from src.setting import settings
+from src.setting.config import settings
 
 
 class EmbeddingService:

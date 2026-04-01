@@ -1,4 +1,4 @@
-from states.config import GraphState
+from src.states.config import GraphState
 from src.services.bedrock import BedrockConverseService
 
 
