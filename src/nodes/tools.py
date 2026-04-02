@@ -3,6 +3,7 @@ from __future__ import annotations
 from src.services.bedrock import BedrockService
 from src.states.config import GraphState
 from src.tools.rag import semantic_document_search
+from langfuse import observe
 
 
 bedrock_service = BedrockService()
@@ -11,7 +12,7 @@ TOOL_DEFS = [ semantic_document_search]
 
 SYSTEM_PROMPT = "You are a helpful assistant. Use tools when needed."
 
-
+@observe()
 def tools_node(state: GraphState):
     messages = state.get("messages", [])
     user_query = state.get("user_query", "").strip()

@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+import os
+from pathlib import Path
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -21,11 +22,26 @@ class Settings(BaseSettings):
     # storage settings
     S3_BUCKET_NAME: str = "my-llmops-bucket"
 
+    #Langfuse settings
+  
+    LANGFUSE_SECRET_KEY:  str | None = None
+    LANGFUSE_PUBLIC_KEY: str | None = None
+    LANGFUSE_BASE_URL: str = "https://api.langfuse.com"
+    LANGFUSE_DEBUG: bool = True
 
     #feature flags 
-
+    ENABLE_LANGFUSE: bool = False
 
     # general configs 
     AWS_REGION: str = "us-east-1"
 
 settings = Settings()
+
+
+if settings.ENABLE_LANGFUSE:
+    if settings.LANGFUSE_PUBLIC_KEY:
+        os.environ["LANGFUSE_PUBLIC_KEY"] = settings.LANGFUSE_PUBLIC_KEY
+    if settings.LANGFUSE_SECRET_KEY:
+        os.environ["LANGFUSE_SECRET_KEY"] = settings.LANGFUSE_SECRET_KEY
+    os.environ["LANGFUSE_HOST"] = settings.LANGFUSE_BASE_URL
+    os.environ["LANGFUSE_DEBUG"] = "true" if settings.LANGFUSE_DEBUG else "false"

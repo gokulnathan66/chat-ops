@@ -4,6 +4,7 @@ from src.states.config import GraphState
 from src.services.bedrock import BedrockService
 from typing import Literal
 from langgraph.types import Command
+from langfuse import observe
 
 INTENT_ROUTER_SCHEMA = {
     "type": "object",
@@ -30,7 +31,7 @@ INTENT_ROUTER_SCHEMA = {
 
 bedrock_service = BedrockService()
 
-
+@observe()
 def intent_node(state: GraphState) -> Command[Literal["general", "tools"]]:
     query = state.get("user_query", "").strip()
 

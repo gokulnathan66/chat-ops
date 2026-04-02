@@ -1,7 +1,6 @@
 from fastapi import FastAPI
-
+from src.setting.config import settings 
 from src.api.routes import router as api_router
-
 
 app = FastAPI(
     title="llmops",

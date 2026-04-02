@@ -6,6 +6,8 @@ from src.setting.config import settings
 from src.services.embedding import EmbeddingService
 from src.services.qdrant import QdrantService
 from src.schema.config import SemanticSearchInput
+from langfuse import observe
+
 
 class RAGToolService:
     def __init__(self) -> None:

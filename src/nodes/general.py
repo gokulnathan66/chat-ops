@@ -1,10 +1,11 @@
 from src.states.config import GraphState
 from src.services.bedrock import BedrockService
+from langfuse import observe
 
 
 bedrock_service = BedrockService()
 
-
+@observe()
 def general_node(state: GraphState):
     user_query = state.get("user_query", "").strip()
 

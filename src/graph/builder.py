@@ -4,8 +4,9 @@ from src.states.config import GraphState
 from src.nodes.intent import intent_node
 from src.nodes.general import general_node
 from src.nodes.tools import tools_node
+from langfuse import observe
 
-
+@observe()
 def build_graph():
     builder = StateGraph(GraphState)
 
