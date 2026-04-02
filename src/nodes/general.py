@@ -1,8 +1,8 @@
 from src.states.config import GraphState
-from src.services.bedrock import BedrockConverseService
+from src.services.bedrock import BedrockService
 
 
-bedrock_service = BedrockConverseService()
+bedrock_service = BedrockService()
 
 
 def general_node(state: GraphState):

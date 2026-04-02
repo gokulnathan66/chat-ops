@@ -5,11 +5,15 @@ from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
+from langchain_core.tools import tool as lc_tool
+from langchain_aws import ChatBedrockConverse
+from langchain.agents import create_agent
+from typing import Any, Callable, Sequence
 
 from src.setting.config import settings
 
 
-class BedrockConverseService:
+class BedrockService:
     def __init__(
         self,
         model_id: str | None = None,
@@ -18,7 +22,8 @@ class BedrockConverseService:
         self.model_id = model_id or settings.MODEL_ID
         self.region_name = region_name or settings.AWS_REGION
         self.client = boto3.client("bedrock-runtime", region_name=self.region_name)
-
+        self.temperature = settings.TEMPERATURE
+        self.max_tokens = settings.MAX_TOKENS
     def _build_message(self, role: str, text: str) -> dict[str, Any]:
         return {
             "role": role,
@@ -136,109 +141,6 @@ class BedrockConverseService:
                 f"{exc.response['Error'].get('Message', str(exc))}"
             ) from exc
 
-    def converse_with_tools(
-        self,
-        *,
-        user_message: str,
-        tool_config: dict[str, Any],
-        tool_handlers: dict[str, Any],
-        system_prompt: str | None = None,
-        temperature: float = 0.2,
-        max_tokens: int = 1024,
-    ) -> dict[str, Any]:
-        messages: list[dict[str, Any]] = [
-            self._build_message("user", user_message)
-        ]
-
-        request: dict[str, Any] = {
-            "modelId": self.model_id,
-            "messages": messages,
-            "toolConfig": tool_config,
-            "inferenceConfig": {
-                "maxTokens": max_tokens,
-                "temperature": temperature,
-            },
-        }
-
-        if system_prompt:
-            request["system"] = [{"text": system_prompt}]
-
-        try:
-            response = self.client.converse(**request)
-        except ClientError as exc:
-            raise RuntimeError(
-                f"Initial Bedrock tool call failed: "
-                f"{exc.response['Error'].get('Message', str(exc))}"
-            ) from exc
-
-        messages.append(response["output"]["message"])
-        stop_reason = response.get("stopReason")
-
-        while stop_reason == "tool_use":
-            tool_requests = response["output"]["message"]["content"]
-
-            for item in tool_requests:
-                if "toolUse" not in item:
-                    continue
-
-                tool_use = item["toolUse"]
-                tool_name = tool_use["name"]
-                tool_input = tool_use.get("input", {})
-                tool_use_id = tool_use["toolUseId"]
-
-                if tool_name not in tool_handlers:
-                    tool_result = {
-                        "toolUseId": tool_use_id,
-                        "status": "error",
-                        "content": [{"text": f"No handler found for tool '{tool_name}'"}],
-                    }
-                else:
-                    try:
-                        result = tool_handlers[tool_name](tool_input)
-                        tool_result = {
-                            "toolUseId": tool_use_id,
-                            "content": [{"json": result}],
-                        }
-                    except Exception as exc:
-                        tool_result = {
-                            "toolUseId": tool_use_id,
-                            "status": "error",
-                            "content": [{"text": str(exc)}],
-                        }
-
-                messages.append(
-                    {
-                        "role": "user",
-                        "content": [{"toolResult": tool_result}],
-                    }
-                )
-
-            try:
-                response = self.client.converse(
-                    modelId=self.model_id,
-                    messages=messages,
-                    toolConfig=tool_config,
-                    inferenceConfig={
-                        "maxTokens": max_tokens,
-                        "temperature": temperature,
-                    },
-                    **({"system": [{"text": system_prompt}]} if system_prompt else {}),
-                )
-            except ClientError as exc:
-                raise RuntimeError(
-                    f"Follow-up Bedrock tool call failed: "
-                    f"{exc.response['Error'].get('Message', str(exc))}"
-                ) from exc
-
-            messages.append(response["output"]["message"])
-            stop_reason = response.get("stopReason")
-
-        return {
-            "messages": messages,
-            "response": response,
-            "text": self.extract_text(response),
-        }
-
     def converse_structured(
         self,
         *,
@@ -305,3 +207,77 @@ class BedrockConverseService:
     @staticmethod
     def pretty_response(response: dict[str, Any]) -> str:
         return json.dumps(response, indent=2, default=str)
+    
+
+
+    def get_llm(self) -> ChatBedrockConverse:
+        return ChatBedrockConverse(
+            model_id=self.model_id,
+            region_name=self.region_name,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+        )
+
+
+
+    def create_agent(
+        self,
+        *,
+        tool_defs: Sequence[dict[str, Any]],
+        system_prompt: str,
+    ):
+        llm = self.get_llm()
+
+        return create_agent(
+            model=llm,
+            tools=tool_defs,
+            system_prompt=system_prompt,
+        )
+
+    def invoke_agent(
+        self,
+        *,
+        user_query: str,
+        tool_defs: Sequence[dict[str, Any]],
+        system_prompt: str,
+        messages: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        agent = self.create_agent(
+            tool_defs=tool_defs,
+            system_prompt=system_prompt,
+        )
+
+        input_messages = messages[:] if messages else []
+        input_messages.append(
+            {
+                "role": "user",
+                "content": user_query,
+            }
+        )
+
+        return agent.invoke({"messages": input_messages})
+
+    @staticmethod
+    def extract_text(agent_response: dict[str, Any]) -> str:
+        messages = agent_response.get("messages", [])
+        if not messages:
+            return ""
+
+        last_message = messages[-1]
+
+        content = getattr(last_message, "content", "")
+        if isinstance(content, str):
+            return content.strip()
+
+        if isinstance(content, list):
+            text_parts: list[str] = []
+
+            for item in content:
+                if isinstance(item, str):
+                    text_parts.append(item)
+                elif isinstance(item, dict) and item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+
+            return "\n".join(part for part in text_parts if part).strip()
+
+        return str(content).strip()

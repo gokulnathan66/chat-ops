@@ -8,6 +8,7 @@ dependencies = [
     "boto3>=1.42.80",
     "fastapi>=0.135.3",
     "langchain>=1.0.0",
+    "langchain-aws>=1.4.2",
     "langchain-core>=1.2.24",
     "langgraph>=1.1.4",
     "pydantic>=2.12",

@@ -10,7 +10,8 @@ class Settings(BaseSettings):
 
     # llm
     MODEL_ID: str = "gpt-3.5-turbo"
-
+    TEMPERATURE: float = 0.7
+    MAX_TOKENS: int = 2048
     # qdrant settings
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
@@ -26,4 +27,5 @@ class Settings(BaseSettings):
 
     # general configs 
     AWS_REGION: str = "us-east-1"
+
 settings = Settings()

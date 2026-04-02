@@ -1,45 +1,32 @@
 from __future__ import annotations
-from src.tools.rag import semantic_document_search 
 
-
-from typing import Any
-
+from src.services.bedrock import BedrockService
 from src.states.config import GraphState
-
-from src.states.config import GraphState
-from src.services.bedrock import BedrockConverseService
+from src.tools.rag import semantic_document_search
 
 
+bedrock_service = BedrockService()
 
+TOOL_DEFS = [ semantic_document_search]
 
-TOOLS_REGISTRY = {
-    "semantic_document_search": semantic_document_search,
-}
-
-
-bedrock_service = BedrockConverseService()
+SYSTEM_PROMPT = "You are a helpful assistant. Use tools when needed."
 
 
 def tools_node(state: GraphState):
     messages = state.get("messages", [])
     user_query = state.get("user_query", "").strip()
 
-    response = bedrock_service.converse(
-        user_message=user_query,
+    response = bedrock_service.invoke_agent(
+        user_query=user_query,
+        tool_defs=TOOL_DEFS,
+        system_prompt=SYSTEM_PROMPT,
         messages=messages,
-        system_prompt="You are a helpful assistant. Use tools when needed.",
-        tool_config=TOOLS_REGISTRY,
-        temperature=0.2,
-        max_tokens=1024,
     )
 
-    assistant_message = response["output"]["message"]
+    text = bedrock_service.extract_text(response)
 
     return {
-        "messages": messages
-        + [{"role": "user", "content": [{"text": user_query}]}]
-        + [assistant_message],
-        "message": bedrock_service.extract_text(response),
-        "stop_reason": response.get("stopReason"),
+        "messages": response.get("messages", []),
+        "message": text,
+        "stop_reason": "end",
     }
-   

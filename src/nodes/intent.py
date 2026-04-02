@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.states.config import GraphState
-from src.services.bedrock import BedrockConverseService
+from src.services.bedrock import BedrockService
 from typing import Literal
 from langgraph.types import Command
 
@@ -28,7 +28,7 @@ INTENT_ROUTER_SCHEMA = {
 }
 
 
-bedrock_service = BedrockConverseService()
+bedrock_service = BedrockService()
 
 
 def intent_node(state: GraphState) -> Command[Literal["general", "tools"]]:
