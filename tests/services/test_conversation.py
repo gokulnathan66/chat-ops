@@ -119,3 +119,40 @@ def test_mark_complete_raises_for_nonexistent_session(mock_settings):
     svc = ConversationService()
     with pytest.raises(ValueError, match="does not exist"):
         svc.mark_complete("nonexistent-session")
+
+
+@mock_aws
+@patch("src.services.conversation.settings")
+def test_get_conversation_returns_metadata_and_turns(mock_settings):
+    mock_settings.CONVERSATIONS_TABLE = TABLE_NAME
+    mock_settings.AWS_REGION = "us-east-1"
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    _create_table(dynamodb)
+
+    svc = ConversationService()
+    svc.write_turn("sess-2", 1, {"user_query": "q1", "ai_response": "a1"})
+    svc.write_turn("sess-2", 2, {"user_query": "q2", "ai_response": "a2"})
+
+    result = svc.get_conversation("sess-2")
+    assert result["metadata"]["status"] == "active"
+    assert result["metadata"]["turn_count"] == 2
+    assert len(result["turns"]) == 2
+    assert result["turns"][0]["user_query"] == "q1"
+    assert result["turns"][1]["user_query"] == "q2"
+
+
+@mock_aws
+@patch("src.services.conversation.settings")
+def test_list_conversations_by_status(mock_settings):
+    mock_settings.CONVERSATIONS_TABLE = TABLE_NAME
+    mock_settings.AWS_REGION = "us-east-1"
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    _create_table(dynamodb)
+
+    svc = ConversationService()
+    svc.write_turn("sess-3", 1, {"user_query": "q", "ai_response": "a"})
+    svc.mark_complete("sess-3")
+
+    results = svc.list_conversations("complete")
+    assert len(results) == 1
+    assert results[0]["session_id"] == "sess-3"

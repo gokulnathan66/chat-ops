@@ -70,3 +70,24 @@ class ConversationService:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 raise ValueError(f"Session {session_id!r} does not exist") from e
             raise
+
+    def get_conversation(self, session_id: str) -> dict:
+        response = self._table.query(
+            KeyConditionExpression=Key("session_id").eq(session_id)
+        )
+        items = response.get("Items", [])
+        metadata = next((i for i in items if i["sk"] == "metadata"), {})
+        turns = sorted(
+            [i for i in items if i["sk"].startswith("turn#")],
+            key=lambda x: x["sk"],
+        )
+        return {"metadata": metadata, "turns": turns}
+
+    def list_conversations(self, status: str, limit: int = 50) -> list[dict]:
+        response = self._table.query(
+            IndexName="status-last_updated_at-index",
+            KeyConditionExpression=Key("status").eq(status),
+            Limit=limit,
+            ScanIndexForward=False,
+        )
+        return response.get("Items", [])
