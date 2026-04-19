@@ -109,21 +109,25 @@ class ConversationService:
             "conversation_summary": summary,
             "rag_score": str(scores.get("rag_score", "")),
             "llm_judge_score": str(scores.get("llm_judge_score", "")),
-            "assigned_to": None,
-            "human_response": None,
-            "resolved_at": None,
             "created_at": now,
         })
 
     def resolve_hitl(self, queue_id: str, human_response: str) -> None:
+        from botocore.exceptions import ClientError
         now = datetime.now(timezone.utc).isoformat()
         hitl_table = self._dynamodb.Table(settings.HITL_TABLE)
-        hitl_table.update_item(
-            Key={"pk": "HITL", "sk": queue_id},
-            UpdateExpression="SET queue_status = :resolved, human_response = :resp, resolved_at = :now",
-            ExpressionAttributeValues={
-                ":resolved": "resolved",
-                ":resp": human_response,
-                ":now": now,
-            },
-        )
+        try:
+            hitl_table.update_item(
+                Key={"pk": "HITL", "sk": queue_id},
+                UpdateExpression="SET queue_status = :resolved, human_response = :resp, resolved_at = :now",
+                ConditionExpression="attribute_exists(sk)",
+                ExpressionAttributeValues={
+                    ":resolved": "resolved",
+                    ":resp": human_response,
+                    ":now": now,
+                },
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                raise ValueError(f"HITL queue item {queue_id!r} does not exist") from e
+            raise
