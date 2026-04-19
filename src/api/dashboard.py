@@ -76,6 +76,7 @@ async def metrics_summary():
     hitl_pending = hitl_table.query(
         IndexName="queue_status-sk-index",
         KeyConditionExpression=Key("queue_status").eq("pending"),
+        Select="COUNT",
     ).get("Count", 0)
 
     golden_total_resp = golden_table.scan()
