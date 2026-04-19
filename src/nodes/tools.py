@@ -4,6 +4,7 @@ import time
 
 from langgraph.types import Command
 from langfuse import observe
+from langchain_core.messages import AIMessage, ToolMessage
 
 from src.services.bedrock import BedrockService
 from src.services.conversation import ConversationService
@@ -19,32 +20,34 @@ TOOL_DEFS = [semantic_document_search]
 SYSTEM_PROMPT = "You are a helpful assistant. Use tools when needed."
 
 
-def _extract_retrieved_docs(response) -> list[dict]:
+def _extract_retrieved_docs(response: dict) -> list[dict]:
     docs = []
-    for msg in getattr(response, "messages", []):
-        content = getattr(msg, "content", [])
-        if isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "tool_result":
-                    for item in block.get("content", []):
-                        if isinstance(item, dict) and item.get("type") == "text":
-                            docs.append({"text_snippet": item["text"][:200]})
+    for msg in response.get("messages", []):
+        if isinstance(msg, ToolMessage):
+            content = msg.content
+            if isinstance(content, str):
+                docs.append({"text_snippet": content[:200]})
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        docs.append({"text_snippet": item.get("text", "")[:200]})
     return docs
 
 
-def _extract_token_usage(response) -> dict:
-    usage = getattr(response, "usage_metadata", None)
-    if usage:
-        return {
-            "input": getattr(usage, "input_tokens", 0),
-            "output": getattr(usage, "output_tokens", 0),
-        }
+def _extract_token_usage(response: dict) -> dict:
+    for msg in reversed(response.get("messages", [])):
+        if isinstance(msg, AIMessage):
+            usage = getattr(msg, "usage_metadata", None)
+            if usage:
+                return {
+                    "input": usage.get("input_tokens", 0),
+                    "output": usage.get("output_tokens", 0),
+                }
     return {"input": 0, "output": 0}
 
 
 @observe()
 def tools_node(state: GraphState):
-    messages = state.get("messages", [])
     user_query = state.get("user_query", "").strip()
 
     start = time.time()
@@ -52,7 +55,7 @@ def tools_node(state: GraphState):
         user_query=user_query,
         tool_defs=TOOL_DEFS,
         system_prompt=SYSTEM_PROMPT,
-        messages=messages,
+        messages=[],
     )
     latency_ms = (time.time() - start) * 1000
 
