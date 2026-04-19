@@ -28,7 +28,10 @@ def _dynamodb():
 
 @router.get("/api/conversations")
 async def list_conversations(status: str = "active", limit: int = 50):
-    return _conversation_svc.list_conversations(status=status, limit=limit)
+    try:
+        return _conversation_svc.list_conversations(status=status, limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"DynamoDB unavailable: {str(e)}")
 
 
 @router.get("/api/conversations/{session_id}")
