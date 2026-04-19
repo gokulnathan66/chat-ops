@@ -156,3 +156,85 @@ def test_list_conversations_by_status(mock_settings):
     results = svc.list_conversations("complete")
     assert len(results) == 1
     assert results[0]["session_id"] == "sess-3"
+
+
+from boto3.dynamodb.conditions import Key as DynKey
+
+HITL_TABLE_NAME = "hitl_queue"
+
+def _create_hitl_table(dynamodb):
+    return dynamodb.create_table(
+        TableName=HITL_TABLE_NAME,
+        KeySchema=[
+            {"AttributeName": "pk", "KeyType": "HASH"},
+            {"AttributeName": "sk", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "pk", "AttributeType": "S"},
+            {"AttributeName": "sk", "AttributeType": "S"},
+            {"AttributeName": "queue_status", "AttributeType": "S"},
+        ],
+        GlobalSecondaryIndexes=[{
+            "IndexName": "queue_status-sk-index",
+            "KeySchema": [
+                {"AttributeName": "queue_status", "KeyType": "HASH"},
+                {"AttributeName": "sk", "KeyType": "RANGE"},
+            ],
+            "Projection": {"ProjectionType": "ALL"},
+        }],
+        BillingMode="PAY_PER_REQUEST",
+    )
+
+
+@mock_aws
+@patch("src.services.conversation.settings")
+def test_write_hitl_creates_pending_item(mock_settings):
+    mock_settings.CONVERSATIONS_TABLE = TABLE_NAME
+    mock_settings.HITL_TABLE = HITL_TABLE_NAME
+    mock_settings.AWS_REGION = "us-east-1"
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    _create_table(dynamodb)
+    _create_hitl_table(dynamodb)
+
+    svc = ConversationService()
+    svc.write_turn("sess-4", 1, {"user_query": "bad q", "ai_response": "bad a"})
+    svc.write_hitl("sess-4", "rag_eval", {"rag_score": 0.3, "llm_judge_score": 0.4})
+
+    hitl_table = dynamodb.Table(HITL_TABLE_NAME)
+    response = hitl_table.query(
+        IndexName="queue_status-sk-index",
+        KeyConditionExpression=DynKey("queue_status").eq("pending"),
+    )
+    items = response["Items"]
+    assert len(items) == 1
+    assert items[0]["session_id"] == "sess-4"
+    assert items[0]["trigger"] == "rag_eval"
+    assert float(items[0]["rag_score"]) == pytest.approx(0.3)
+
+
+@mock_aws
+@patch("src.services.conversation.settings")
+def test_resolve_hitl_updates_status(mock_settings):
+    mock_settings.CONVERSATIONS_TABLE = TABLE_NAME
+    mock_settings.HITL_TABLE = HITL_TABLE_NAME
+    mock_settings.AWS_REGION = "us-east-1"
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    _create_table(dynamodb)
+    hitl_table = _create_hitl_table(dynamodb)
+
+    svc = ConversationService()
+    svc.write_turn("sess-5", 1, {"user_query": "q", "ai_response": "a"})
+    svc.write_hitl("sess-5", "llm_judge", {"rag_score": 0.2, "llm_judge_score": 0.3})
+
+    response = hitl_table.query(
+        IndexName="queue_status-sk-index",
+        KeyConditionExpression=DynKey("queue_status").eq("pending"),
+    )
+    queue_id = response["Items"][0]["sk"]
+
+    svc.resolve_hitl(queue_id, "Human answered: pricing is $49.")
+
+    item = hitl_table.get_item(Key={"pk": "HITL", "sk": queue_id})["Item"]
+    assert item["queue_status"] == "resolved"
+    assert item["human_response"] == "Human answered: pricing is $49."
+    assert item["resolved_at"] is not None

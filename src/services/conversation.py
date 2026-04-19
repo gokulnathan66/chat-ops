@@ -91,3 +91,39 @@ class ConversationService:
             ScanIndexForward=False,
         )
         return response.get("Items", [])
+
+    def write_hitl(self, session_id: str, trigger: str, scores: dict) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        hitl_table = self._dynamodb.Table(settings.HITL_TABLE)
+        conv = self.get_conversation(session_id)
+        last_5 = conv["turns"][-5:]
+        summary = " | ".join(
+            f"Q: {t.get('user_query', '')} A: {t.get('ai_response', '')}" for t in last_5
+        )
+        hitl_table.put_item(Item={
+            "pk": "HITL",
+            "sk": f"{now}#{session_id}",
+            "session_id": session_id,
+            "queue_status": "pending",
+            "trigger": trigger,
+            "conversation_summary": summary,
+            "rag_score": str(scores.get("rag_score", "")),
+            "llm_judge_score": str(scores.get("llm_judge_score", "")),
+            "assigned_to": None,
+            "human_response": None,
+            "resolved_at": None,
+            "created_at": now,
+        })
+
+    def resolve_hitl(self, queue_id: str, human_response: str) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        hitl_table = self._dynamodb.Table(settings.HITL_TABLE)
+        hitl_table.update_item(
+            Key={"pk": "HITL", "sk": queue_id},
+            UpdateExpression="SET queue_status = :resolved, human_response = :resp, resolved_at = :now",
+            ExpressionAttributeValues={
+                ":resolved": "resolved",
+                ":resp": human_response,
+                ":now": now,
+            },
+        )
