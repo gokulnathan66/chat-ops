@@ -1,5 +1,6 @@
 import boto3
 from boto3.dynamodb.conditions import Key
+from datetime import date
 from fastapi import APIRouter, HTTPException
 from src.setting.config import settings
 from src.services.conversation import ConversationService
@@ -26,11 +27,11 @@ async def get_conversation(session_id: str):
 
 
 @router.get("/api/evaluations")
-async def list_evaluations(eval_type: str = "rag", limit: int = 50):
+async def list_evaluations(type: str = "rag", limit: int = 50):
     table = _dynamodb().Table(settings.EVALUATIONS_TABLE)
     response = table.query(
         IndexName="eval_type-created_at-index",
-        KeyConditionExpression=Key("eval_type").eq(eval_type),
+        KeyConditionExpression=Key("eval_type").eq(type),
         Limit=limit,
         ScanIndexForward=False,
     )
@@ -65,7 +66,12 @@ async def metrics_summary():
         Limit=100,
         ScanIndexForward=False,
     ).get("Items", [])
-    cost_today = sum(float(e.get("cost_usd", 0)) for e in cost_evals)
+    today_prefix = date.today().isoformat()
+    cost_today = sum(
+        float(e.get("cost_usd", 0))
+        for e in cost_evals
+        if e.get("created_at", "").startswith(today_prefix)
+    )
 
     hitl_pending = hitl_table.query(
         IndexName="queue_status-sk-index",
