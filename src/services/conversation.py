@@ -1,5 +1,6 @@
 import boto3
 from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 from decimal import Decimal
 from src.setting.config import settings
@@ -13,6 +14,8 @@ def _floats_to_decimals(obj):
         return {k: _floats_to_decimals(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_floats_to_decimals(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(_floats_to_decimals(v) for v in obj)
     return obj
 
 
@@ -22,6 +25,8 @@ class ConversationService:
         self._table = self._dynamodb.Table(settings.CONVERSATIONS_TABLE)
 
     def write_turn(self, session_id: str, turn_n: int, data: dict) -> None:
+        if turn_n < 1:
+            raise ValueError(f"turn_n must be >= 1, got {turn_n}")
         now = datetime.now(timezone.utc).isoformat()
         self._table.put_item(Item={
             "session_id": session_id,
@@ -53,9 +58,15 @@ class ConversationService:
 
     def mark_complete(self, session_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
-        self._table.update_item(
-            Key={"session_id": session_id, "sk": "metadata"},
-            UpdateExpression="SET #s = :complete, last_updated_at = :now",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":complete": "complete", ":now": now},
-        )
+        try:
+            self._table.update_item(
+                Key={"session_id": session_id, "sk": "metadata"},
+                UpdateExpression="SET #s = :complete, last_updated_at = :now",
+                ConditionExpression="attribute_exists(session_id)",
+                ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues={":complete": "complete", ":now": now},
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                raise ValueError(f"Session {session_id!r} does not exist") from e
+            raise
