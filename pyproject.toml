@@ -19,3 +19,13 @@ dependencies = [
     "sentence-transformers>=5.3.0",
     "uvicorn>=0.42.0",
 ]
+
+[dependency-groups]
+dev = [
+    "moto[dynamodb]>=5.1.22",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=0.23,<1",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
