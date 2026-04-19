@@ -32,8 +32,21 @@ class Settings(BaseSettings):
     #feature flags 
     ENABLE_LANGFUSE: bool = False
 
-    # general configs 
+    # general configs
     AWS_REGION: str = "us-east-1"
+
+    # DynamoDB table names
+    CONVERSATIONS_TABLE: str = "conversations"
+    EVALUATIONS_TABLE: str = "evaluations"
+    HITL_TABLE: str = "hitl_queue"
+    GOLDEN_RESULTS_TABLE: str = "golden_results"
+
+    # Evaluation thresholds
+    INACTIVITY_MINUTES: int = 15
+    RAG_THRESHOLD: float = 0.6
+    HITL_THRESHOLD: float = 0.6
+    GOLDEN_PASS_THRESHOLD: float = 0.7
+    RAG_RERANK_TOP_K_MULTIPLIER: int = 2
 
 settings = Settings()
 
