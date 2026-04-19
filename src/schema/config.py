@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, Optional
 from typing import Any
 
 
@@ -31,6 +31,8 @@ class GraphInvokeRequest(BaseModel):
     user_query: str = Field(..., description="User input for the graph")
     messages: list[dict[str, Any]] = Field(default_factory=list)
     message: str = Field(default="")
+    session_id: Optional[str] = None
+    turn: int = 1
 
 
 class GraphInvokeResponse(BaseModel):
