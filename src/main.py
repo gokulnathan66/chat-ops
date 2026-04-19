@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from src.setting.config import settings 
+from src.setting.config import settings
 from src.api.routes import router as api_router
+from src.api.dashboard import router as dashboard_router
 
 app = FastAPI(
     title="llmops",
@@ -8,6 +9,7 @@ app = FastAPI(
 )
 
 app.include_router(api_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/health")
