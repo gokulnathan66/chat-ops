@@ -51,3 +51,15 @@ variable "inactivity_minutes" {
   type        = number
   default     = 15
 }
+
+variable "golden_pass_threshold" {
+  description = "Minimum LLM judge score for a golden dataset question to pass"
+  type        = number
+  default     = 0.7
+}
+
+variable "s3_bucket_name" {
+  description = "S3 bucket name for document storage and golden.json"
+  type        = string
+  default     = ""
+}
