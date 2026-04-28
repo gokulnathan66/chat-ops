@@ -1,0 +1,4 @@
+company,ticker,fiscal_year,revenue_usd_b,gross_profit_usd_b,operating_income_usd_b,net_income_usd_b,eps_diluted,gross_margin_pct,operating_margin_pct,net_margin_pct,revenue_growth_yoy_pct,total_assets_usd_b,cash_usd_b,long_term_debt_usd_b,free_cash_flow_usd_b,rd_expense_usd_b,capex_usd_b,employees,market_cap_approx_usd_b
+Apple Inc.,AAPL,FY2025,391.04,184.06,123.22,93.74,6.42,47.1,31.5,24.0,4.0,364.98,29.94,85.75,108.81,31.37,9.45,164000,3100
+Microsoft Corporation,MSFT,FY2025,279.01,196.54,133.73,125.54,16.9,70.4,47.9,45.0,12.9,584.1,78.22,42.69,101.0,34.2,44.48,228000,3200
+Alphabet Inc. (Google),GOOGL,FY2025,350.02,210.77,118.13,100.05,8.04,60.2,33.8,28.6,12.5,593.79,95.29,14.76,66.42,49.33,75.06,185719,2100

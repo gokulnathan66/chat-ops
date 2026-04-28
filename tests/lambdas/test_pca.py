@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.lambdas.pca import analyze_conversation, handler
+from evaluations.pca import analyze_conversation, handler
 
 PCA_OUTPUT = {
     "topics": ["pricing", "availability"],
@@ -9,9 +9,9 @@ PCA_OUTPUT = {
 }
 
 
-@patch("src.lambdas.pca.BedrockService")
-@patch("src.lambdas.pca.ConversationService")
-@patch("src.lambdas.pca.settings")
+@patch("evaluations.pca.BedrockService")
+@patch("evaluations.pca.ConversationService")
+@patch("evaluations.pca.settings")
 def test_analyze_conversation_writes_pca_eval(mock_settings, mock_conv_cls, mock_bedrock_cls):
     mock_settings.EVALUATIONS_TABLE = "evaluations"
     mock_settings.AWS_REGION = "us-east-1"
@@ -31,7 +31,7 @@ def test_analyze_conversation_writes_pca_eval(mock_settings, mock_conv_cls, mock
     mock_bedrock.converse_structured.return_value = PCA_OUTPUT.copy()
 
     mock_dynamo = MagicMock()
-    with patch("src.lambdas.pca.boto3") as mock_boto3:
+    with patch("evaluations.pca.boto3") as mock_boto3:
         mock_boto3.resource.return_value.Table.return_value = mock_dynamo
         result = analyze_conversation("s-pca-1")
 
@@ -43,7 +43,7 @@ def test_analyze_conversation_writes_pca_eval(mock_settings, mock_conv_cls, mock
     assert call_args["eval_type"] == "pca"
 
 
-@patch("src.lambdas.pca.analyze_conversation")
+@patch("evaluations.pca.analyze_conversation")
 def test_handler_calls_analyze(mock_analyze):
     mock_analyze.return_value = {"pca_topics": [], "pca_sentiment": "neutral", "pca_unresolved": []}
     result = handler({"session_id": "s1"}, {})

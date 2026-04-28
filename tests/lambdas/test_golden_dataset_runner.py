@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.lambdas.golden_dataset_runner import (
+from evaluations.golden_dataset_runner import (
     load_golden_dataset,
     run_golden_question,
     run_golden_dataset,
@@ -13,7 +13,7 @@ GOLDEN_DATA = [
 ]
 
 
-@patch("src.lambdas.golden_dataset_runner.S3Service")
+@patch("evaluations.golden_dataset_runner.S3Service")
 def test_load_golden_dataset(mock_s3_cls):
     import json
     mock_s3 = MagicMock()
@@ -25,8 +25,8 @@ def test_load_golden_dataset(mock_s3_cls):
     assert result[0]["question_id"] == "q1"
 
 
-@patch("src.lambdas.golden_dataset_runner.semantic_document_search")
-@patch("src.lambdas.golden_dataset_runner.BedrockService")
+@patch("evaluations.golden_dataset_runner.semantic_document_search")
+@patch("evaluations.golden_dataset_runner.BedrockService")
 def test_run_golden_question_pass(mock_bedrock_cls, mock_search):
     mock_bedrock = MagicMock()
     mock_bedrock_cls.return_value = mock_bedrock
@@ -42,8 +42,8 @@ def test_run_golden_question_pass(mock_bedrock_cls, mock_search):
     assert result["faithfulness"] == pytest.approx(0.9)
 
 
-@patch("src.lambdas.golden_dataset_runner.semantic_document_search")
-@patch("src.lambdas.golden_dataset_runner.BedrockService")
+@patch("evaluations.golden_dataset_runner.semantic_document_search")
+@patch("evaluations.golden_dataset_runner.BedrockService")
 def test_run_golden_question_fail(mock_bedrock_cls, mock_search):
     mock_bedrock = MagicMock()
     mock_bedrock_cls.return_value = mock_bedrock
@@ -58,10 +58,10 @@ def test_run_golden_question_fail(mock_bedrock_cls, mock_search):
     assert result["avg_score"] < 0.7
 
 
-@patch("src.lambdas.golden_dataset_runner.settings")
-@patch("src.lambdas.golden_dataset_runner.run_golden_question")
-@patch("src.lambdas.golden_dataset_runner.load_golden_dataset")
-@patch("src.lambdas.golden_dataset_runner.boto3")
+@patch("evaluations.golden_dataset_runner.settings")
+@patch("evaluations.golden_dataset_runner.run_golden_question")
+@patch("evaluations.golden_dataset_runner.load_golden_dataset")
+@patch("evaluations.golden_dataset_runner.boto3")
 def test_run_golden_dataset_writes_results(mock_boto3, mock_load, mock_run_q, mock_settings):
     mock_settings.AWS_REGION = "us-east-1"
     mock_settings.GOLDEN_RESULTS_TABLE = "golden_results"
@@ -84,7 +84,7 @@ def test_run_golden_dataset_writes_results(mock_boto3, mock_load, mock_run_q, mo
     assert mock_table.put_item.call_count == 2
 
 
-@patch("src.lambdas.golden_dataset_runner.run_golden_dataset")
+@patch("evaluations.golden_dataset_runner.run_golden_dataset")
 def test_handler_calls_run(mock_run):
     mock_run.return_value = {"run_id": "r1", "total": 2, "passed": 1, "pass_rate": 0.5}
     result = handler({"bucket": "my-bucket"}, {})

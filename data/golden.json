@@ -1,0 +1,77 @@
+[
+  {
+    "question_id": "apple_q001",
+    "question": "What was Apple's total net sales in fiscal year 2025?",
+    "expected_answer": "Apple's total net sales in fiscal year 2025 were approximately $391 to $400 billion, with iPhone as the largest segment contributing roughly $200 billion, followed by Services at approximately $100 billion."
+  },
+  {
+    "question_id": "apple_q002",
+    "question": "How much revenue did Apple's Services segment generate in 2025 and what is its growth trend?",
+    "expected_answer": "Apple's Services segment — which includes the App Store, Apple Music, iCloud, Apple TV+, and Apple Pay — generated approximately $96 to $100 billion in fiscal year 2025, representing around 25% of total revenue and growing double-digits year-over-year, making it Apple's fastest-growing and highest-margin segment."
+  },
+  {
+    "question_id": "apple_q003",
+    "question": "What AI features did Apple introduce in 2025 and what is Apple Intelligence?",
+    "expected_answer": "Apple Intelligence is Apple's suite of personal AI features integrated into iOS 18, iPadOS 18, and macOS Sequoia. Key features include Writing Tools for text generation and summarization, image generation via Image Playground and Genmoji, an upgraded Siri with on-device large language models and ChatGPT integration, and Priority Notifications. Apple emphasized on-device processing and Private Cloud Compute for privacy."
+  },
+  {
+    "question_id": "apple_q004",
+    "question": "What was Apple's gross margin percentage in fiscal year 2025?",
+    "expected_answer": "Apple's gross margin in fiscal year 2025 was approximately 46%, driven by the high-margin Services segment which has gross margins above 70%, partially offset by lower hardware margins on products like iPhone and Mac."
+  },
+  {
+    "question_id": "apple_q005",
+    "question": "How did Apple's iPhone revenue perform in 2025 compared to prior years?",
+    "expected_answer": "iPhone revenue in fiscal year 2025 was approximately $200 to $205 billion, representing around 51% of Apple's total net sales. While iPhone sales faced headwinds in some markets, the iPhone 16 lineup incorporating Apple Intelligence features drove upgrade cycles, particularly in regions where Apple Intelligence was available."
+  },
+  {
+    "question_id": "alphabet_q001",
+    "question": "What was Alphabet's total revenue in 2025?",
+    "expected_answer": "Alphabet's total revenue in 2025 was approximately $350 to $380 billion, with Google Services (Search, YouTube, and other) as the dominant contributor at over $290 billion, while Google Cloud reached approximately $43 to $50 billion, showing strong growth driven by AI workloads."
+  },
+  {
+    "question_id": "alphabet_q002",
+    "question": "How fast is Google Cloud growing and what is driving its growth in 2025?",
+    "expected_answer": "Google Cloud grew approximately 28 to 35 percent year-over-year in 2025, reaching approximately $43 to $50 billion in annual revenue. Growth is primarily driven by AI infrastructure demand (TPUs and GPUs for training and inference), enterprise adoption of Vertex AI platform, and Gemini model integrations in enterprise products like Google Workspace."
+  },
+  {
+    "question_id": "alphabet_q003",
+    "question": "What is Google's Gemini AI strategy and how is it integrated across products?",
+    "expected_answer": "Google's Gemini is a family of multimodal AI models (Nano, Pro, Flash, and Ultra) integrated across Google Search (AI Overviews), Google Workspace, Google Cloud Vertex AI, Android devices, and Pixel phones. Gemini 1.5 Pro introduced a 1-million token context window. Google is positioning Gemini as its unified AI platform to compete with OpenAI's GPT-4 and Anthropic's Claude."
+  },
+  {
+    "question_id": "alphabet_q004",
+    "question": "What were Alphabet's advertising revenues in 2025?",
+    "expected_answer": "Alphabet's Google advertising revenues in 2025 were approximately $270 to $290 billion, comprising Google Search advertising (roughly $175 to $200 billion) and YouTube advertising (approximately $34 to $40 billion). AI-powered ad improvements, including Performance Max campaigns enhanced with Gemini, contributed to advertising revenue growth."
+  },
+  {
+    "question_id": "alphabet_q005",
+    "question": "What was Alphabet's operating income and operating margin in 2025?",
+    "expected_answer": "Alphabet's operating income in 2025 was approximately $80 to $100 billion, with an operating margin of around 25 to 28 percent. Google Cloud turned meaningfully profitable, contributing positively to overall margins as it scaled, while core Google Services maintained high margins above 35 percent."
+  },
+  {
+    "question_id": "microsoft_q001",
+    "question": "What was Microsoft's total revenue in fiscal year 2025?",
+    "expected_answer": "Microsoft's total revenue in fiscal year 2025 (ending June 2025) was approximately $245 to $280 billion, growing approximately 15 to 16 percent year-over-year. The three major segments — Productivity and Business Processes, Intelligent Cloud, and More Personal Computing — all contributed to growth, led by Intelligent Cloud driven by Azure."
+  },
+  {
+    "question_id": "microsoft_q002",
+    "question": "How fast is Microsoft Azure growing and what share of cloud market does it hold?",
+    "expected_answer": "Microsoft Azure grew approximately 29 to 40 percent year-over-year in fiscal year 2025, driven by AI services adoption. Azure holds approximately 20 to 25 percent of the global cloud infrastructure market, second to AWS. Azure AI services, including Azure OpenAI Service and Copilot Stack, were the primary growth drivers, with AI contributing multiple percentage points to Azure growth."
+  },
+  {
+    "question_id": "microsoft_q003",
+    "question": "What is Microsoft Copilot and how is it generating revenue?",
+    "expected_answer": "Microsoft Copilot is an AI assistant integrated across Microsoft 365 (Word, Excel, PowerPoint, Outlook, Teams), GitHub, Dynamics 365, and Azure. Microsoft 365 Copilot is sold as an add-on at $30 per user per month for enterprise customers. GitHub Copilot reached over 1.8 million paid subscribers. Copilot contributed to accelerating Microsoft 365 commercial seat growth and ARPU expansion."
+  },
+  {
+    "question_id": "microsoft_q004",
+    "question": "What was Microsoft's Intelligent Cloud revenue and how did it perform in fiscal year 2025?",
+    "expected_answer": "Microsoft's Intelligent Cloud segment, which includes Azure, SQL Server, Windows Server, GitHub, and enterprise services, generated approximately $87 to $105 billion in revenue in fiscal year 2025. Azure and other cloud services were the primary growth engine, while on-premises server products declined as customers migrated to cloud. The segment had an operating margin of approximately 40 to 45 percent."
+  },
+  {
+    "question_id": "cross_q001",
+    "question": "How are Apple, Google, and Microsoft investing in AI infrastructure in 2025?",
+    "expected_answer": "All three companies significantly increased AI capital expenditure in 2025. Microsoft committed tens of billions to AI infrastructure, including a $10 billion OpenAI partnership and massive Azure AI data center buildout. Google invested heavily in TPU v5 chips, Gemini model training infrastructure, and DeepMind integration. Apple deployed Apple Silicon (M4 chips) for on-device AI processing and Private Cloud Compute servers for cloud AI tasks, prioritizing privacy over raw compute scale. Combined, the three companies announced over $100 billion in planned AI capex for 2025."
+  }
+]

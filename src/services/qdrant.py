@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -25,9 +26,9 @@ class QdrantService:
         )
 
     def ensure_collection(self) -> None:
-        if not self.client.collection_exists(settings.qdrant_collection):
+        if not self.client.collection_exists(settings.QDRANT_COLLECTION):
             self.client.create_collection(
-                collection_name=settings.qdrant_collection,
+                collection_name=settings.QDRANT_COLLECTION,
                 vectors_config=VectorParams(
                     size=settings.embedding_size,
                     distance=Distance.COSINE,
@@ -49,7 +50,7 @@ class QdrantService:
         for field_name, field_schema in index_fields.items():
             try:
                 self.client.create_payload_index(
-                    collection_name=settings.qdrant_collection,
+                    collection_name=settings.QDRANT_COLLECTION,
                     field_name=field_name,
                     field_schema=field_schema,
                 )
@@ -67,7 +68,8 @@ class QdrantService:
         return f"{doc_id}:{chunk_index}"
 
     def build_point_id(self, chunk_id: str) -> str:
-        return self.sha256_hexdigest(chunk_id)
+        digest = hashlib.sha256(chunk_id.encode("utf-8")).digest()
+        return str(uuid.UUID(bytes=digest[:16]))
 
     def build_points(
         self,
@@ -114,7 +116,7 @@ class QdrantService:
             return
         self.ensure_collection()
         self.client.upsert(
-            collection_name=settings.qdrant_collection,
+            collection_name=settings.QDRANT_COLLECTION,
             points=points,
             wait=True,
         )
@@ -135,7 +137,7 @@ class QdrantService:
             )
 
         result = self.client.query_points(
-            collection_name=settings.qdrant_collection,
+            collection_name=settings.QDRANT_COLLECTION,
             query=query_vector,
             query_filter=query_filter,
             limit=top_k,

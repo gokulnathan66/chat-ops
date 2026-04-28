@@ -6,14 +6,23 @@ from src.services.bedrock import BedrockService
 from src.services.conversation import ConversationService
 
 
+from src.services.prompt import prompt_service
+
 bedrock_service = BedrockService()
 conversation_svc = ConversationService()
 
-SYSTEM_PROMPT = (
+_FALLBACK_SYSTEM_PROMPT = (
     "You are a helpful AI assistant. "
     "Answer clearly and concisely. "
-    "If the user asks about indexed documents, do not invent results."
+    "Do not fabricate financial figures or company-specific facts."
 )
+
+
+def _get_system_prompt() -> str:
+    try:
+        return prompt_service.render("general_assistant")
+    except Exception:
+        return _FALLBACK_SYSTEM_PROMPT
 
 
 @observe()
@@ -23,7 +32,7 @@ def general_node(state: GraphState) -> Command:
     start = time.time()
     response = bedrock_service.converse(
         user_message=user_query,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=_get_system_prompt(),
         temperature=0.3,
         max_tokens=1024,
     )

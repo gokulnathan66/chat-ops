@@ -106,11 +106,11 @@ def _apply_settings(mock_settings):
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 @mock_aws
-@patch("src.lambdas.rag_evaluator.EmbeddingService")
-@patch("src.lambdas.rag_evaluator.BedrockService")
-@patch("src.lambdas.rag_evaluator.settings")
-@patch("src.lambdas.pca.BedrockService")
-@patch("src.lambdas.pca.settings")
+@patch("evaluations.rag_evaluator.EmbeddingService")
+@patch("evaluations.rag_evaluator.BedrockService")
+@patch("evaluations.rag_evaluator.settings")
+@patch("evaluations.pca.BedrockService")
+@patch("evaluations.pca.settings")
 @patch("src.services.conversation.settings")
 def test_full_pipeline_rag_and_pca_written(
     mock_conv_settings, mock_pca_settings, mock_pca_bedrock_cls,
@@ -156,8 +156,8 @@ def test_full_pipeline_rag_and_pca_written(
         "topics": ["pricing"], "sentiment": "positive", "unresolved_questions": []
     }
 
-    from src.lambdas.rag_evaluator import evaluate_session
-    from src.lambdas.pca import analyze_conversation
+    from evaluations.rag_evaluator import evaluate_session
+    from evaluations.pca import analyze_conversation
 
     rag_result = evaluate_session("pipe-1")
     pca_result = analyze_conversation("pipe-1")
@@ -185,9 +185,9 @@ def test_full_pipeline_rag_and_pca_written(
 
 @mock_aws
 @patch("src.tools.rag.semantic_document_search")
-@patch("src.lambdas.rag_evaluator.EmbeddingService")
-@patch("src.lambdas.rag_evaluator.BedrockService")
-@patch("src.lambdas.rag_evaluator.settings")
+@patch("evaluations.rag_evaluator.EmbeddingService")
+@patch("evaluations.rag_evaluator.BedrockService")
+@patch("evaluations.rag_evaluator.settings")
 @patch("src.services.conversation.settings")
 def test_pipeline_hitl_flagged_on_low_score(
     mock_conv_settings, mock_rag_settings, mock_bedrock_cls, mock_emb_cls, mock_search,
@@ -225,7 +225,7 @@ def test_pipeline_hitl_flagged_on_low_score(
         "faithfulness": 0.2, "relevance": 0.1, "reason": "not grounded"
     }
 
-    from src.lambdas.rag_evaluator import evaluate_session
+    from evaluations.rag_evaluator import evaluate_session
     result = evaluate_session("pipe-hitl")
 
     assert result["hitl_flagged"] is True
@@ -242,12 +242,12 @@ def test_pipeline_hitl_flagged_on_low_score(
 
 
 @mock_aws
-@patch("src.lambdas.rag_evaluator.EmbeddingService")
-@patch("src.lambdas.rag_evaluator.BedrockService")
-@patch("src.lambdas.rag_evaluator.settings")
-@patch("src.lambdas.pca.BedrockService")
-@patch("src.lambdas.pca.settings")
-@patch("src.lambdas.eval_runner.settings")
+@patch("evaluations.rag_evaluator.EmbeddingService")
+@patch("evaluations.rag_evaluator.BedrockService")
+@patch("evaluations.rag_evaluator.settings")
+@patch("evaluations.pca.BedrockService")
+@patch("evaluations.pca.settings")
+@patch("evaluations.eval_runner.settings")
 @patch("src.services.conversation.settings")
 def test_eval_runner_marks_complete_and_evaluates(
     mock_conv_settings, mock_runner_settings, mock_pca_settings, mock_pca_bedrock_cls,
@@ -290,7 +290,7 @@ def test_eval_runner_marks_complete_and_evaluates(
         "topics": ["refund"], "sentiment": "neutral", "unresolved_questions": []
     }
 
-    from src.lambdas.eval_runner import run_evals_for_session
+    from evaluations.eval_runner import run_evals_for_session
     result = run_evals_for_session("pipe-runner")
 
     # Session should be marked complete
@@ -303,9 +303,9 @@ def test_eval_runner_marks_complete_and_evaluates(
 
 
 @mock_aws
-@patch("src.lambdas.rag_evaluator.EmbeddingService")
-@patch("src.lambdas.rag_evaluator.BedrockService")
-@patch("src.lambdas.rag_evaluator.settings")
+@patch("evaluations.rag_evaluator.EmbeddingService")
+@patch("evaluations.rag_evaluator.BedrockService")
+@patch("evaluations.rag_evaluator.settings")
 @patch("src.services.conversation.settings")
 def test_pipeline_general_route_skipped(
     mock_conv_settings, mock_rag_settings, mock_bedrock_cls, mock_emb_cls,
@@ -328,7 +328,7 @@ def test_pipeline_general_route_skipped(
         "retrieved_docs": [],
     })
 
-    from src.lambdas.rag_evaluator import evaluate_session
+    from evaluations.rag_evaluator import evaluate_session
     result = evaluate_session("pipe-general")
 
     assert result["rag_score"] == 0.0

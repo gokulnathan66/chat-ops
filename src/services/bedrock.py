@@ -164,17 +164,17 @@ class BedrockService:
                 "maxTokens": max_tokens,
                 "temperature": temperature,
             },
-            "outputConfig": {
-                "textFormat": {
-                    "type": "json_schema",
-                    "structure": {
-                        "jsonSchema": {
+            "toolConfig": {
+                "tools": [
+                    {
+                        "toolSpec": {
                             "name": schema_name,
                             "description": schema_description,
-                            "schema": json.dumps(json_schema),
+                            "inputSchema": {"json": json_schema},
                         }
-                    },
-                }
+                    }
+                ],
+                "toolChoice": {"tool": {"name": schema_name}},
             },
         }
 
@@ -187,16 +187,15 @@ class BedrockService:
         try:
             response = self.client.converse(**request)
             content = response.get("output", {}).get("message", {}).get("content", [])
-            text_parts = [item["text"] for item in content if "text" in item]
-            raw_text = "\n".join(text_parts).strip()
-            return json.loads(raw_text)
+            for item in content:
+                if "toolUse" in item:
+                    return item["toolUse"]["input"]
+            raise RuntimeError("Bedrock did not return a tool use response")
         except ClientError as exc:
             raise RuntimeError(
                 f"Bedrock structured converse failed for model '{self.model_id}': "
                 f"{exc.response['Error'].get('Message', str(exc))}"
             ) from exc
-        except json.JSONDecodeError as exc:
-            raise RuntimeError("Bedrock returned invalid structured JSON output") 
         
     @staticmethod
     def extract_text(response: dict[str, Any]) -> str:

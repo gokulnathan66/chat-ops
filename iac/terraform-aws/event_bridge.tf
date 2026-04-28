@@ -37,3 +37,23 @@ resource "aws_lambda_permission" "allow_eventbridge_golden_runner" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.golden_runner_schedule.arn
 }
+
+resource "aws_cloudwatch_event_rule" "pca_runner_schedule" {
+  name                = "pca-runner-schedule"
+  description         = "Trigger pca_runner Lambda every 15 minutes for post-conversation analysis"
+  schedule_expression = "rate(15 minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "pca_runner_target" {
+  rule      = aws_cloudwatch_event_rule.pca_runner_schedule.name
+  target_id = "pca_runner"
+  arn       = aws_lambda_function.pca_runner.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_pca_runner" {
+  statement_id  = "AllowEventBridgePcaRunner"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.pca_runner.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.pca_runner_schedule.arn
+}

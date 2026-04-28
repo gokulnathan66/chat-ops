@@ -1,0 +1,16 @@
+company,ticker,fiscal_year,segment,revenue_usd_b,pct_of_total
+Apple Inc.,AAPL,FY2025,iPhone,210.88,53.9
+Apple Inc.,AAPL,FY2025,Services,96.17,24.6
+Apple Inc.,AAPL,FY2025,Mac,37.44,9.6
+Apple Inc.,AAPL,FY2025,"Wearables, Home & Accessories",24.29,6.2
+Apple Inc.,AAPL,FY2025,iPad,22.26,5.7
+Microsoft Corporation,MSFT,FY2025,Intelligent Cloud,105.36,37.8
+Microsoft Corporation,MSFT,FY2025,Productivity and Business Processes,98.32,35.2
+Microsoft Corporation,MSFT,FY2025,More Personal Computing,75.33,27.0
+Alphabet Inc. (Google),GOOGL,FY2025,Google Search & Other,198.09,56.6
+Alphabet Inc. (Google),GOOGL,FY2025,YouTube Ads,36.15,10.3
+Alphabet Inc. (Google),GOOGL,FY2025,Google Network,28.62,8.2
+Alphabet Inc. (Google),GOOGL,FY2025,Google Cloud,43.23,12.4
+Alphabet Inc. (Google),GOOGL,FY2025,Google Other (Subscriptions & Devices),18.13,5.2
+Alphabet Inc. (Google),GOOGL,FY2025,Other Bets,1.75,0.5
+Alphabet Inc. (Google),GOOGL,FY2025,Hedging Gains (Losses),0.61,0.2

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.lambdas.rag_evaluator import compute_rag_score, run_llm_judge, evaluate_session
+from evaluations.rag_evaluator import compute_rag_score, run_llm_judge, evaluate_session
 
 
 def test_compute_rag_score_high_similarity():
@@ -24,7 +24,7 @@ def test_compute_rag_score_empty_docs():
     assert score == 0.0
 
 
-@patch("src.lambdas.rag_evaluator.BedrockService")
+@patch("evaluations.rag_evaluator.BedrockService")
 def test_run_llm_judge_returns_scores(mock_bedrock_cls):
     mock_bedrock = MagicMock()
     mock_bedrock_cls.return_value = mock_bedrock
@@ -43,10 +43,10 @@ def test_run_llm_judge_returns_scores(mock_bedrock_cls):
     assert "reason" in result
 
 
-@patch("src.lambdas.rag_evaluator.BedrockService")
-@patch("src.lambdas.rag_evaluator.EmbeddingService")
-@patch("src.lambdas.rag_evaluator.ConversationService")
-@patch("src.lambdas.rag_evaluator.settings")
+@patch("evaluations.rag_evaluator.BedrockService")
+@patch("evaluations.rag_evaluator.EmbeddingService")
+@patch("evaluations.rag_evaluator.ConversationService")
+@patch("evaluations.rag_evaluator.settings")
 def test_evaluate_session_writes_eval_record(
     mock_settings, mock_conv_cls, mock_emb_cls, mock_bedrock_cls
 ):
@@ -80,7 +80,7 @@ def test_evaluate_session_writes_eval_record(
     }
 
     mock_dynamo = MagicMock()
-    with patch("src.lambdas.rag_evaluator.boto3") as mock_boto3:
+    with patch("evaluations.rag_evaluator.boto3") as mock_boto3:
         mock_boto3.resource.return_value.Table.return_value = mock_dynamo
         result = evaluate_session("s1")
 

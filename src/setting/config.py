@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     HITL_TABLE: str = "hitl_queue"
     GOLDEN_RESULTS_TABLE: str = "golden_results"
 
+    # Embedding / chunking
+    embedding_model: str = "amazon.titan-embed-text-v2:0"
+    embedding_size: int = 256
+    chunk_size: int = 512
+    chunk_overlap: int = 64
+    top_k: int = 5
+
     # Evaluation thresholds
     INACTIVITY_MINUTES: int = 15
     RAG_THRESHOLD: float = 0.6

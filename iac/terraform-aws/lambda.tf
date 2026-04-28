@@ -40,3 +40,23 @@ resource "aws_lambda_function" "golden_dataset_runner" {
     }
   }
 }
+
+resource "aws_lambda_function" "pca_runner" {
+  function_name = "pca_runner"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "pca.handler"
+  runtime       = "python3.13"
+  timeout       = 300
+  memory_size   = 512
+
+  filename         = "dist/lambdas.zip"
+  source_code_hash = filebase64sha256("dist/lambdas.zip")
+
+  environment {
+    variables = {
+      CONVERSATIONS_TABLE = var.conversations_table
+      EVALUATIONS_TABLE   = var.evaluations_table
+      INACTIVITY_MINUTES  = tostring(var.inactivity_minutes)
+    }
+  }
+}

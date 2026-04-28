@@ -1,0 +1,39 @@
+# AWS configuration
+aws_region        = "ap-south-1"
+ec2_instance_type = "t3.medium"
+ec2_key_name      = "my-key-pair"   # set to "" to skip key pair
+
+# Container image
+ecr_repo_name = "llmops-api"
+app_image_tag = "latest"
+
+# S3 — leave empty to auto-generate "<account-id>" suffix
+s3_bucket_name = ""
+
+# Qdrant
+qdrant_host       = "your-qdrant-host.example.com"
+qdrant_port       = 6333
+qdrant_api_key    = "your-qdrant-api-key"
+qdrant_collection = "llmops-rag"
+
+# Langfuse
+langfuse_public_key = "pk-lf-..."
+langfuse_secret_key = "sk-lf-..."
+langfuse_host       = "https://cloud.langfuse.com"
+
+# Bedrock model
+model_id = "anthropic.claude-haiku-4-5-20251001-v1:0"
+
+# DynamoDB table names
+conversations_table  = "conversations"
+evaluations_table    = "evaluations"
+hitl_table           = "hitl_queue"
+golden_results_table = "golden_results"
+
+# Evaluation thresholds and schedules
+rag_threshold         = 0.6
+hitl_threshold        = 0.6
+inactivity_minutes    = 15
+golden_pass_threshold = 0.7
+eval_cron_schedule    = "rate(15 minutes)"
+golden_cron_schedule  = "rate(1 hour)"

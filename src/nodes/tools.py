@@ -12,12 +12,24 @@ from src.states.config import GraphState
 from src.tools.rag import semantic_document_search
 
 
+from src.services.prompt import prompt_service
+
 bedrock_service = BedrockService()
 conversation_svc = ConversationService()
 
 TOOL_DEFS = [semantic_document_search]
 
-SYSTEM_PROMPT = "You are a helpful assistant. Use tools when needed."
+_FALLBACK_SYSTEM_PROMPT = (
+    "You are a helpful financial analyst assistant. "
+    "Use the semantic_document_search tool to retrieve relevant documents before answering."
+)
+
+
+def _get_system_prompt() -> str:
+    try:
+        return prompt_service.render("rag_assistant")
+    except Exception:
+        return _FALLBACK_SYSTEM_PROMPT
 
 
 def _extract_retrieved_docs(response: dict) -> list[dict]:
@@ -54,7 +66,7 @@ def tools_node(state: GraphState):
     response = bedrock_service.invoke_agent(
         user_query=user_query,
         tool_defs=TOOL_DEFS,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=_get_system_prompt(),
         messages=[],
     )
     latency_ms = (time.time() - start) * 1000
