@@ -245,17 +245,44 @@ Conversations have a GSI on `status` + `last_updated_at` for efficient stale-ses
 - Human resolves via `conversation_service.resolve_hitl(queue_id, human_response)`
 
 ### Real-Time Monitoring Dashboard
-Next.js app at `dashboard/realtime-monitoring`:
-- Overview page: KPI cards, recent eval scores, PCA sentiment strip
-- Evaluations page: session-level RAG + faithfulness scores, HITL flag status
-- Golden Dataset page: pass rate trend, per-question breakdown
-- PCA page: topic distribution, sentiment over time, unresolved question list
+Next.js app at `dashboard/realtime-monitoring` (port 3000):
+- **Overview** — KPI cards (avg RAG score, HITL pending, golden pass rate, cost today), recent eval table, PCA sentiment strip
+- **Evaluations** — session-level RAG score, faithfulness, relevance, HITL flag status
+- **Golden Dataset** — pass rate per run, per-question breakdown with expected vs generated answers
+- **PCA** — topic distribution, sentiment over time, unresolved question list
+
+### AI Interface + HITL Dashboard
+Next.js app at `dashboard/ai-interface` (port 3001):
+- **Chat** — send queries, view intent routing, retrieved docs, and LLM responses in real time
+- **HITL Queue** — review flagged sessions, read conversation summary, submit human responses
+- **Ingestion** — trigger document ingestion by S3 key via the `/api/ingestion/start` endpoint
+- **Session List** — browse active/complete sessions, drill into individual turns
+
+---
+
+## API Reference
+
+All endpoints are served by the FastAPI backend at `http://localhost:8000`.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/api/chat` | Send a query through the LangGraph pipeline |
+| `GET` | `/api/conversations` | List conversations by status (`active`/`complete`) |
+| `GET` | `/api/conversations/{session_id}` | Get all turns + metadata for a session |
+| `GET` | `/api/evaluations` | List eval records by type (`rag`/`pca`) |
+| `GET` | `/api/metrics/summary` | Aggregate KPIs (avg RAG, HITL count, golden pass rate) |
+| `GET` | `/api/hitl` | List HITL queue items by status |
+| `POST` | `/api/hitl` | Manually create a HITL queue item |
+| `POST` | `/api/hitl/{queue_id}/respond` | Submit human response to a HITL item |
+| `GET` | `/api/golden-results` | List golden dataset run results |
+| `POST` | `/api/ingestion/start` | Trigger async document ingestion by S3 key |
 
 ---
 
 ## Quick Start
 
-### Local development
+### 1. Backend API
 
 ```bash
 # Install dependencies
@@ -268,11 +295,32 @@ docker compose up -d
 cp .env.example .env
 # Edit .env — set AWS_REGION, MODEL_ID, Langfuse keys
 
+# Ingest knowledge base into Qdrant
+make ingest
+
 # Run with hot reload
 make dev
 ```
 
-Health check: `GET /health`
+Health check: `GET http://localhost:8000/health`
+
+### 2. Monitoring Dashboard
+
+```bash
+cd dashboard/realtime-monitoring
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+npm run dev   # http://localhost:3000
+```
+
+### 3. AI Interface + HITL Dashboard
+
+```bash
+cd dashboard/ai-interface
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+npm run dev   # http://localhost:3001
+```
 
 ### Ingest documents
 
