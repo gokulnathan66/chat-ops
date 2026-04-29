@@ -11,14 +11,86 @@ A production-grade LangGraph RAG API with full LLMOps tooling: observability, pr
 
 ## Architecture Overview
 
-```
-POST /api/chat
-  → Intent Node  (Bedrock structured output → "general" | "tools")
-  → Router
-      ├── General Node  → converse() → response
-      └── Tools Node    → LangChain agent + semantic_document_search (Qdrant) → response
-  → DynamoDB (conversation turn written)
-  → Langfuse (trace flushed)
+```mermaid
+flowchart TD
+    subgraph Dashboards["Dashboards  (Next.js)"]
+        AI["ai-interface  :3001\nChat · HITL · Ingestion trigger"]
+        MON["realtime-monitoring  :3000\nMetrics · Evals · PCA · Golden"]
+    end
+
+    subgraph API["FastAPI Backend  (EC2 :8000)"]
+        CHAT_EP["POST /api/chat"]
+        DASH_EP["Dashboard APIs\n/conversations · /evaluations\n/hitl · /metrics/summary · /golden-results"]
+    end
+
+    subgraph Graph["LangGraph Pipeline"]
+        INTENT["Intent Node\nBedrock tool-use\nroutes → general or tools"]
+        GEN["General Node\nconverse()"]
+        TOOLS["Tools Node\ninvoke_agent()"]
+        INTENT -->|general| GEN
+        INTENT -->|tools| TOOLS
+    end
+
+    subgraph Bedrock["AWS Bedrock  (ap-south-1)"]
+        LLM["Claude Haiku\nanthropic.claude-3-haiku-20240307-v1:0"]
+        EMB["Titan Embed Text v2\namazon.titan-embed-text-v2:0  ·  256-dim"]
+    end
+
+    QDRANT[("Qdrant\nVector Store")]
+
+    subgraph Persistence["AWS Persistence"]
+        DDB[("DynamoDB\nconversations · evaluations\nhitl_queue · golden_results")]
+        S3[("S3\nDocuments · golden.json")]
+    end
+
+    subgraph Ingestion["Document Ingestion"]
+        SQS["SQS Queue"]
+        INGEST["qdrant_ingestion Lambda"]
+    end
+
+    subgraph EvalPipeline["Evaluation Pipeline  (EventBridge Cron)"]
+        EVAL["eval_runner\nevery 15 min"]
+        RAG_E["rag_evaluator\ncosine sim + LLM judge"]
+        PCA_E["pca\ntopics · sentiment · unresolved"]
+        GOLDEN["golden_dataset_runner\nevery 1 hr · 15 Q&A pairs"]
+        EVAL --> RAG_E
+        EVAL --> PCA_E
+    end
+
+    LANGFUSE["Langfuse\nTraces · Prompt Versioning"]
+
+    AI -->|POST /api/chat| CHAT_EP
+    AI -->|HITL · sessions| DASH_EP
+    MON -->|metrics · evals| DASH_EP
+
+    CHAT_EP --> INTENT
+
+    GEN --> LLM
+    TOOLS --> LLM
+    TOOLS -->|embed query| EMB
+    EMB --> QDRANT
+
+    GEN --> DDB
+    TOOLS --> DDB
+    DASH_EP --> DDB
+
+    INTENT --> LANGFUSE
+    GEN --> LANGFUSE
+    TOOLS --> LANGFUSE
+
+    S3 -->|S3 event| SQS
+    SQS --> INGEST
+    INGEST -->|embed chunks| EMB
+    INGEST --> QDRANT
+
+    RAG_E -->|embed| EMB
+    RAG_E -->|LLM judge| LLM
+    RAG_E --> DDB
+    PCA_E -->|LLM judge| LLM
+    PCA_E --> DDB
+    GOLDEN -->|retrieve| QDRANT
+    GOLDEN -->|generate + judge| LLM
+    GOLDEN --> DDB
 ```
 
 ### Stack
