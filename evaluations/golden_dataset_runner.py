@@ -1,10 +1,12 @@
-import boto3
 import json
 import uuid
-from datetime import datetime, timezone
-from src.setting.config import settings
+from datetime import UTC, datetime
+
+import boto3
+
 from src.services.bedrock import BedrockService
 from src.services.s3 import S3Service
+from src.setting.config import settings
 from src.tools.rag import semantic_document_search
 
 JUDGE_SCHEMA = {
@@ -72,7 +74,7 @@ def run_golden_dataset(bucket: str | None = None) -> dict:
     table = dynamodb.Table(settings.GOLDEN_RESULTS_TABLE)
     dataset = load_golden_dataset(bucket)
     run_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     results = []
     for item in dataset:

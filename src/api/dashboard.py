@@ -1,11 +1,13 @@
-import boto3
 import json
-from boto3.dynamodb.conditions import Key
 from datetime import date
+
+import boto3
+from boto3.dynamodb.conditions import Key
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from src.setting.config import settings
+
 from src.services.conversation import ConversationService
+from src.setting.config import settings
 
 router = APIRouter()
 
@@ -34,7 +36,7 @@ async def list_conversations(status: str = "active", limit: int = 50):
     try:
         return _get_conversation_svc().list_conversations(status=status, limit=limit)
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"DynamoDB unavailable: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"DynamoDB unavailable: {str(e)}") from e
 
 
 @router.get("/api/conversations/{session_id}")

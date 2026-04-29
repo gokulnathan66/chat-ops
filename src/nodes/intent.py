@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from src.states.config import GraphState
-from src.services.bedrock import BedrockService
 from typing import Literal
-from langgraph.types import Command
+
 from langfuse import observe
+from langgraph.types import Command
+
+from src.services.bedrock import BedrockService
+from src.services.prompt import prompt_service
+from src.states.config import GraphState
 
 INTENT_ROUTER_SCHEMA = {
     "type": "object",
@@ -28,8 +31,6 @@ INTENT_ROUTER_SCHEMA = {
     "additionalProperties": False,
 }
 
-
-from src.services.prompt import prompt_service
 
 bedrock_service = BedrockService()
 

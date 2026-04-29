@@ -1,8 +1,10 @@
+from datetime import UTC, datetime
+
 import boto3
-from datetime import datetime, timezone
-from src.setting.config import settings
+
 from src.services.bedrock import BedrockService
 from src.services.conversation import ConversationService
+from src.setting.config import settings
 
 PCA_SCHEMA = {
     "type": "object",
@@ -59,7 +61,7 @@ def analyze_conversation(session_id: str) -> dict:
         schema_description="Post-conversation analysis: topics, sentiment, unresolved questions",
     )
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     eval_table.put_item(Item={
         "session_id": session_id,
         "sk": f"eval#pca#{now}",

@@ -1,8 +1,10 @@
+from datetime import UTC, datetime
+from decimal import Decimal
+
 import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
-from datetime import datetime, timezone
-from decimal import Decimal
+
 from src.setting.config import settings
 
 
@@ -27,7 +29,7 @@ class ConversationService:
     def write_turn(self, session_id: str, turn_n: int, data: dict) -> None:
         if turn_n < 1:
             raise ValueError(f"turn_n must be >= 1, got {turn_n}")
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         self._table.put_item(Item={
             "session_id": session_id,
             "sk": f"turn#{turn_n:03d}",
@@ -57,7 +59,7 @@ class ConversationService:
         )
 
     def mark_complete(self, session_id: str) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         try:
             self._table.update_item(
                 Key={"session_id": session_id, "sk": "metadata"},
@@ -93,7 +95,7 @@ class ConversationService:
         return response.get("Items", [])
 
     def write_hitl(self, session_id: str, trigger: str, scores: dict) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         hitl_table = self._dynamodb.Table(settings.HITL_TABLE)
         conv = self.get_conversation(session_id)
         last_5 = conv["turns"][-5:]
@@ -114,7 +116,7 @@ class ConversationService:
 
     def resolve_hitl(self, queue_id: str, human_response: str) -> None:
         from botocore.exceptions import ClientError
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         hitl_table = self._dynamodb.Table(settings.HITL_TABLE)
         try:
             hitl_table.update_item(

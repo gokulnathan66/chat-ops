@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from qdrant_client import QdrantClient
@@ -48,14 +49,12 @@ class QdrantService:
         }
 
         for field_name, field_schema in index_fields.items():
-            try:
+            with contextlib.suppress(Exception):
                 self.client.create_payload_index(
                     collection_name=settings.QDRANT_COLLECTION,
                     field_name=field_name,
                     field_schema=field_schema,
                 )
-            except Exception:
-                pass
 
     @staticmethod
     def sha256_hexdigest(value: str) -> str:
@@ -85,10 +84,10 @@ class QdrantService:
     ) -> tuple[str, list[PointStruct]]:
         tags = tags or []
         doc_id = self.build_doc_id(full_text, url_or_file_path)
-        created_at = datetime.now(timezone.utc).isoformat()
+        created_at = datetime.now(UTC).isoformat()
         points: list[PointStruct] = []
 
-        for idx, (chunk, vector) in enumerate(zip(chunks, vectors)):
+        for idx, (chunk, vector) in enumerate(zip(chunks, vectors, strict=False)):
             chunk_id = self.build_chunk_id(doc_id, idx)
             point_id = self.build_point_id(chunk_id)
             points.append(

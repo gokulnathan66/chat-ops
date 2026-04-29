@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import contextlib
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from langfuse import Langfuse
 
 from src.setting.config import settings
 
-
-DEFAULT_PROMPTS: Dict[str, Dict[str, Any]] = {
+DEFAULT_PROMPTS: dict[str, dict[str, Any]] = {
     "rag_assistant": {
         "type": "text",
         "prompt": """You are an expert financial analyst assistant with deep knowledge of big tech companies — Apple, Google/Alphabet, and Microsoft.
@@ -68,16 +68,16 @@ When in doubt, route to "tools" to ensure factual accuracy from source documents
 class PromptService:
     def __init__(
         self,
-        public_key: Optional[str] = None,
-        secret_key: Optional[str] = None,
-        host: Optional[str] = None,
+        public_key: str | None = None,
+        secret_key: str | None = None,
+        host: str | None = None,
     ):
         self.client = Langfuse(
             public_key=public_key or os.getenv("LANGFUSE_PUBLIC_KEY"),
             secret_key=secret_key or os.getenv("LANGFUSE_SECRET_KEY"),
             host=host or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com"),
         )
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
 
     def _cache_key(self, name: str, label: str) -> str:
         return f"{name}:{label}"
@@ -95,7 +95,7 @@ class PromptService:
             if name not in DEFAULT_PROMPTS:
                 raise ValueError(
                     f"Prompt '{name}' not found in Langfuse and no local default is defined."
-                )
+                ) from None
 
             spec = DEFAULT_PROMPTS[name]
             labels = spec.get("labels") or [label]
@@ -133,7 +133,5 @@ class PromptService:
 prompt_service = PromptService()
 
 if settings.ENABLE_LANGFUSE:
-    try:
+    with contextlib.suppress(Exception):
         prompt_service.warmup()
-    except Exception:
-        pass

@@ -1,10 +1,12 @@
+from datetime import UTC, datetime, timedelta
+
 import boto3
-from datetime import datetime, timezone, timedelta
 from boto3.dynamodb.conditions import Key
-from src.setting.config import settings
-from src.services.conversation import ConversationService
-from evaluations.rag_evaluator import evaluate_session
+
 from evaluations.pca import analyze_conversation
+from evaluations.rag_evaluator import evaluate_session
+from src.services.conversation import ConversationService
+from src.setting.config import settings
 
 
 def get_stale_sessions() -> list[str]:
@@ -12,7 +14,7 @@ def get_stale_sessions() -> list[str]:
     dynamodb = boto3.resource("dynamodb", region_name=settings.AWS_REGION)
     table = dynamodb.Table(settings.CONVERSATIONS_TABLE)
     cutoff = (
-        datetime.now(timezone.utc) - timedelta(minutes=settings.INACTIVITY_MINUTES)
+        datetime.now(UTC) - timedelta(minutes=settings.INACTIVITY_MINUTES)
     ).isoformat()
     response = table.query(
         IndexName="status-last_updated_at-index",

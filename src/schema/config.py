@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field
-from typing import Literal, Optional
-from typing import Any
+from typing import Any, Literal
 
+from pydantic import BaseModel, Field
 
 
 class SemanticSearchInput(BaseModel):
@@ -31,7 +30,7 @@ class GraphInvokeRequest(BaseModel):
     user_query: str = Field(..., description="User input for the graph")
     messages: list[dict[str, Any]] = Field(default_factory=list)
     message: str = Field(default="")
-    session_id: Optional[str] = None
+    session_id: str | None = None
     turn: int = 1
 
 

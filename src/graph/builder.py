@@ -1,10 +1,11 @@
-from langgraph.graph import StateGraph, START, END
-
-from src.states.config import GraphState
-from src.nodes.intent import intent_node
-from src.nodes.general import general_node
-from src.nodes.tools import tools_node
 from langfuse import observe
+from langgraph.graph import END, START, StateGraph
+
+from src.nodes.general import general_node
+from src.nodes.intent import intent_node
+from src.nodes.tools import tools_node
+from src.states.config import GraphState
+
 
 @observe()
 def build_graph():

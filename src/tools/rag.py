@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from langchain.tools import tool
 
-from src.setting.config import settings
+from src.schema.config import SemanticSearchInput
 from src.services.embedding import EmbeddingService
 from src.services.qdrant import QdrantService
-from src.schema.config import SemanticSearchInput
-from langfuse import observe
+from src.setting.config import settings
 
 
 class RAGToolService:

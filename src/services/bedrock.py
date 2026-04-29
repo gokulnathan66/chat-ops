@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
-from langchain_core.tools import tool as lc_tool
-from langchain_aws import ChatBedrockConverse
 from langchain.agents import create_agent
-from typing import Any, Callable, Sequence
+from langchain_aws import ChatBedrockConverse
 
 from src.setting.config import settings
 

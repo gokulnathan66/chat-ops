@@ -1,10 +1,11 @@
-import uuid
 import logging
+import uuid
+
 from fastapi import APIRouter
 from langfuse import observe
-from src.schema.config import GraphInvokeRequest, GraphInvokeResponse
-from src.graph.builder import graph
 
+from src.graph.builder import graph
+from src.schema.config import GraphInvokeRequest, GraphInvokeResponse
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("langfuse").setLevel(logging.INFO)

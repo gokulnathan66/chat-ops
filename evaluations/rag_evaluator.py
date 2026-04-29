@@ -1,9 +1,11 @@
+from datetime import UTC, datetime
+
 import boto3
-from datetime import datetime, timezone
-from src.setting.config import settings
+
 from src.services.bedrock import BedrockService
-from src.services.embedding import EmbeddingService
 from src.services.conversation import ConversationService
+from src.services.embedding import EmbeddingService
+from src.setting.config import settings
 
 LLM_JUDGE_SCHEMA = {
     "type": "object",
@@ -19,7 +21,7 @@ LLM_JUDGE_SCHEMA = {
 def compute_rag_score(query_emb: list, doc_embs: list) -> float:
     if not doc_embs:
         return 0.0
-    scores = [sum(q * d for q, d in zip(query_emb, doc_emb)) for doc_emb in doc_embs]
+    scores = [sum(q * d for q, d in zip(query_emb, doc_emb, strict=False)) for doc_emb in doc_embs]
     return max(scores)
 
 
@@ -85,7 +87,7 @@ def evaluate_session(session_id: str) -> dict:
     avg_rag = sum(all_rag_scores) / len(all_rag_scores)
     avg_faith = sum(all_faithfulness) / len(all_faithfulness)
     avg_rel = sum(all_relevance) / len(all_relevance)
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     eval_table.put_item(Item={
         "session_id": session_id,

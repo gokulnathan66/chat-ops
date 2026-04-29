@@ -2,17 +2,15 @@ from __future__ import annotations
 
 import time
 
-from langgraph.types import Command
-from langfuse import observe
 from langchain_core.messages import AIMessage, ToolMessage
+from langfuse import observe
+from langgraph.types import Command
 
 from src.services.bedrock import BedrockService
 from src.services.conversation import ConversationService
+from src.services.prompt import prompt_service
 from src.states.config import GraphState
 from src.tools.rag import semantic_document_search
-
-
-from src.services.prompt import prompt_service
 
 bedrock_service = BedrockService()
 conversation_svc = ConversationService()

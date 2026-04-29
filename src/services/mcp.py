@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, List, Optional
+from typing import Any
 
 from langchain_core.tools import BaseTool
 
@@ -14,8 +14,8 @@ except Exception:
 
 class MCPService:
     def __init__(self) -> None:
-        self._client: Optional[Any] = None
-        self._tools: Optional[List[BaseTool]] = None
+        self._client: Any | None = None
+        self._tools: list[BaseTool] | None = None
 
     def _server_config(self) -> dict[str, Any]:
         transport = os.getenv("MCP_TRANSPORT", "streamable_http")
@@ -42,13 +42,13 @@ class MCPService:
             self._client = MultiServerMCPClient(self._server_config())
         return self._client
 
-    async def get_tools(self) -> List[BaseTool]:
+    async def get_tools(self) -> list[BaseTool]:
         if self._tools is None:
             client = await self.get_client()
             self._tools = await client.get_tools()
         return self._tools
 
-    async def refresh_tools(self) -> List[BaseTool]:
+    async def refresh_tools(self) -> list[BaseTool]:
         self._tools = None
         return await self.get_tools()
 
