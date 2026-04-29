@@ -1,5 +1,10 @@
 # LLMOps — End-to-End RAG Application
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/gokulnathan66/llmops/actions/workflows/ci.yml/badge.svg)](https://github.com/gokulnathan66/llmops/actions/workflows/ci.yml)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 A production-grade LangGraph RAG API with full LLMOps tooling: observability, prompt versioning, evaluation pipelines, HITL, real-time monitoring, and one-command infrastructure.
 
 ---
@@ -10,7 +15,7 @@ A production-grade LangGraph RAG API with full LLMOps tooling: observability, pr
 POST /api/chat
   → Intent Node  (Bedrock structured output → "general" | "tools")
   → Router
-      ├── General Node  → converse_text() → response
+      ├── General Node  → converse() → response
       └── Tools Node    → LangChain agent + semantic_document_search (Qdrant) → response
   → DynamoDB (conversation turn written)
   → Langfuse (trace flushed)
@@ -21,9 +26,9 @@ POST /api/chat
 | Layer | Technology |
 |---|---|
 | API | FastAPI + LangGraph |
-| LLM | AWS Bedrock (Claude Haiku 4.5) |
+| LLM | AWS Bedrock (Claude Haiku — `anthropic.claude-3-haiku-20240307-v1:0`) |
 | Vector store | Qdrant |
-| Embeddings | Sentence Transformers |
+| Embeddings | AWS Bedrock Titan Embed Text v2 (256-dim) |
 | Observability | Langfuse (traces + prompt versioning) |
 | Data store | DynamoDB (conversations, evaluations, HITL, golden results) |
 | Document storage | S3 |
@@ -125,7 +130,7 @@ Conversations have a GSI on `status` + `last_updated_at` for efficient stale-ses
 
 ### RAG Pipeline
 - Documents (PDF, TXT, CSV) uploaded to S3 → SQS message → `qdrant_ingestion` Lambda
-- Lambda chunks text, embeds with Sentence Transformers, upserts to Qdrant
+- Lambda chunks text, embeds with **AWS Bedrock Titan Embed Text v2**, upserts to Qdrant
 - `semantic_document_search` tool performs cosine similarity search at query time
 - Knowledge base: Apple, Google/Alphabet, Microsoft 2025 annual reports and news articles
 
@@ -172,15 +177,14 @@ Next.js app at `dashboard/realtime-monitoring`:
 uv sync
 
 # Start Qdrant locally
-docker run -p 6333:6333 qdrant/qdrant
+docker compose up -d
 
 # Copy and fill environment variables
 cp .env.example .env
+# Edit .env — set AWS_REGION, MODEL_ID, Langfuse keys
 
 # Run with hot reload
 make dev
-# or
-uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Health check: `GET /health`
@@ -215,12 +219,12 @@ curl -X POST http://localhost:8000/api/chat \
 
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL_ID` | `gpt-3.5-turbo` | AWS Bedrock model ARN |
-| `AWS_REGION` | `us-east-1` | AWS region |
-| `QDRANT_HOST` | `localhost` | Qdrant hostname |
+| `MODEL_ID` | `anthropic.claude-3-haiku-20240307-v1:0` | AWS Bedrock model ID or inference profile |
+| `AWS_REGION` | `ap-south-1` | AWS region |
+| `QDRANT_HOST` | `http://localhost:6333` | Qdrant URL |
 | `QDRANT_PORT` | `6333` | Qdrant port |
-| `QDRANT_API_KEY` | — | Qdrant API key |
-| `QDRANT_COLLECTION` | `llmops-rag` | Qdrant collection name |
+| `QDRANT_API_KEY` | — | Qdrant API key (empty for local) |
+| `QDRANT_COLLECTION` | `llmops` | Qdrant collection name |
 | `S3_BUCKET_NAME` | — | Document storage bucket |
 | `LANGFUSE_PUBLIC_KEY` | — | Langfuse public key |
 | `LANGFUSE_SECRET_KEY` | — | Langfuse secret key |
@@ -270,7 +274,7 @@ Each subdirectory is a standalone module with its own S3 backend state. Apply th
 | `monitoring/` | `monitoring/terraform.tfstate` | CloudWatch dashboard + alarms |
 | `security/` | `security/terraform.tfstate` | Secrets Manager |
 
-State bucket: `llmops-terraform-state` (create this bucket manually before first `terraform init`).
+State bucket: `llmops-terraform-state-<account_id>` (created automatically by `scripts/deploy.sh`, or manually: `aws s3 mb s3://llmops-terraform-state-$(aws sts get-caller-identity --query Account --output text) --region ap-south-1`).
 
 ### Key Outputs
 

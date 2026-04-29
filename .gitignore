@@ -1,15 +1,48 @@
+# Environment
 .env
-*.lock
+.env.local
+.env.*.local
+
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+logs/
+
+# IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-logs/
-archives/
-.superpowers/
+Thumbs.db
+
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.backup
 terraform.tfvars
+*.tfplan
+
+# Project-specific
+archives/
+.superpowers/
+
