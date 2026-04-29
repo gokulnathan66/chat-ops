@@ -42,58 +42,143 @@ POST /api/chat
 
 ```
 llmops/
-├── src/
-│   ├── api/routes.py            # FastAPI endpoints
-│   ├── graph/builder.py         # LangGraph state machine
+├── src/                                    # API + LangGraph application
+│   ├── main.py                             # FastAPI app entry point
+│   ├── api/
+│   │   ├── routes.py                       # POST /api/chat endpoint
+│   │   └── dashboard.py                    # Dashboard + HITL REST endpoints
+│   ├── graph/
+│   │   └── builder.py                      # LangGraph state machine (3 nodes)
 │   ├── nodes/
-│   │   ├── intent.py            # Intent router node
-│   │   ├── general.py           # General response node
-│   │   └── tools.py             # RAG agent node
+│   │   ├── intent.py                       # Intent router → "general" | "tools"
+│   │   ├── general.py                      # Direct LLM response node
+│   │   └── tools.py                        # RAG agent node (LangChain + Qdrant)
 │   ├── services/
-│   │   ├── bedrock.py           # AWS Bedrock wrapper
-│   │   ├── conversation.py      # DynamoDB conversation store
-│   │   ├── embedding.py         # Sentence Transformers
-│   │   ├── prompt.py            # Langfuse prompt versioning
-│   │   ├── qdrant.py            # Qdrant vector store
-│   │   ├── s3.py                # S3 document reader
-│   │   └── mcp.py               # MCP server client
-│   ├── tools/rag.py             # semantic_document_search tool
-│   ├── states/config.py         # GraphState TypedDict
-│   ├── schema/config.py         # Pydantic request/response models
-│   └── setting/config.py        # Pydantic Settings (env-based)
-├── evaluations/
-│   ├── rag_evaluator.py         # RAG faithfulness + relevance scoring
-│   ├── eval_runner.py           # Stale session eval orchestrator
-│   ├── golden_dataset_runner.py # Golden Q&A regression tests
-│   └── pca.py                   # Post-conversation analysis (topics, sentiment)
-├── data/
-│   ├── golden.json              # Golden Q&A dataset (Apple, Google, Microsoft)
-│   ├── csv/                     # Big tech financial summary CSVs
+│   │   ├── bedrock.py                      # Bedrock: converse, structured output, agent
+│   │   ├── conversation.py                 # DynamoDB: turns, metadata, HITL queue
+│   │   ├── embedding.py                    # Titan Embed v2 via Bedrock + chunking
+│   │   ├── prompt.py                       # Langfuse prompt versioning + fallbacks
+│   │   ├── qdrant.py                       # Qdrant: collection, upsert, semantic search
+│   │   ├── s3.py                           # S3: PDF + CSV document reader
+│   │   └── mcp.py                          # MCP server client
+│   ├── tools/
+│   │   └── rag.py                          # semantic_document_search LangChain tool
+│   ├── schema/
+│   │   └── config.py                       # Pydantic request/response models
+│   ├── states/
+│   │   └── config.py                       # GraphState TypedDict
+│   └── setting/
+│       └── config.py                       # Pydantic Settings (env-based config)
+│
+├── evaluations/                            # Evaluation pipeline (Lambda handlers)
+│   ├── rag_evaluator.py                    # Cosine sim + LLM judge (faithfulness, relevance)
+│   ├── eval_runner.py                      # Stale session detection + eval orchestration
+│   ├── golden_dataset_runner.py            # Golden Q&A regression runner
+│   └── pca.py                              # Post-conversation analysis (topics, sentiment)
+│
+├── data/                                   # Knowledge base + evaluation data
+│   ├── golden.json                         # 15 Q&A pairs (Apple, Google, Microsoft)
+│   ├── qdrant_ingestion.py                 # Local ingestion script (S3 event format)
+│   ├── csv/
+│   │   ├── big_tech_company_profiles.csv
+│   │   ├── big_tech_financials_summary.csv
+│   │   └── big_tech_segment_revenue.csv
 │   └── pdfs/
-│       ├── annual_reports/      # Apple, Google, Microsoft 10-K 2025
-│       └── news_articles/       # AI strategy and earnings news
-├── iac/terraform-aws/
-│   ├── main.tf                  # Provider, S3 backend, documents bucket
-│   ├── ec2.tf                   # API server (t3.medium, ECR pull on boot)
-│   ├── ecr.tf                   # Docker image registry
-│   ├── sqs.tf                   # Ingestion queue + Lambda trigger
-│   ├── secrets.tf               # Secrets Manager (all env vars)
-│   ├── lambda.tf                # eval_runner, golden_dataset_runner, pca_runner
-│   ├── event_bridge.tf          # Cron schedules for all Lambdas
-│   ├── cloudwatch.tf            # Log groups + alarms
-│   ├── iam.tf                   # Lambda and EC2 IAM roles
-│   ├── variables.tf             # All input variables
-│   ├── outputs.tf               # EC2 IP, ECR URL, SQS ARN, etc.
-│   ├── user_data.sh             # EC2 bootstrap (Docker + ECR pull)
-│   ├── terraform.tfvars.example # Example values
-│   ├── data_managment/          # Module: DynamoDB tables
-│   ├── evaluations/             # Module: eval Lambdas + EventBridge
-│   ├── monitoring/              # Module: CloudWatch dashboard + alarms
-│   └── security/                # Module: Secrets Manager
-├── dashboard/realtime-monitoring/  # Next.js monitoring dashboard
-├── scripts/deploy.sh            # Full deploy script
-├── Dockerfile                   # Container image
-└── docker-compose.yaml          # Local dev stack
+│       ├── annual_reports/                 # Apple, Google, Microsoft 10-K 2025
+│       └── news_articles/                  # AI features, cloud growth, advertising
+│
+├── dashboard/                              # Next.js frontend applications
+│   ├── realtime-monitoring/                # Monitoring dashboard (port 3000)
+│   │   └── src/app/
+│   │       ├── page.tsx                    # Overview: KPI cards, eval table, PCA strip
+│   │       ├── evals/page.tsx              # RAG + faithfulness scores per session
+│   │       ├── golden/page.tsx             # Golden dataset pass rate + per-question breakdown
+│   │       └── pca/page.tsx                # Topic distribution, sentiment, unresolved questions
+│   └── ai-interface/                       # Chat + HITL interface (port 3001)
+│       └── src/
+│           ├── app/
+│           │   ├── page.tsx                # Chat interface
+│           │   ├── hitl/page.tsx           # HITL queue review + human response
+│           │   └── ingestion/page.tsx      # Document ingestion trigger
+│           ├── components/
+│           │   ├── ChatThread.tsx
+│           │   ├── HitlQueue.tsx
+│           │   ├── IngestionPanel.tsx
+│           │   └── SessionList.tsx
+│           └── lib/api.ts                  # API client (calls FastAPI backend)
+│
+├── iac/terraform-aws/                      # Infrastructure as Code (ap-south-1)
+│   ├── main.tf                             # Provider, S3 backend, documents bucket
+│   ├── ec2.tf                              # API server (t3.medium, ECR pull on boot)
+│   ├── ecr.tf                              # Docker image registry
+│   ├── sqs.tf                              # Ingestion queue + qdrant_ingestion Lambda
+│   ├── lambda.tf                           # eval_runner, golden_dataset_runner, pca_runner
+│   ├── event_bridge.tf                     # EventBridge cron schedules
+│   ├── cloudwatch.tf                       # Log groups + error alarms
+│   ├── iam.tf                              # Lambda + EC2 IAM roles and policies
+│   ├── secrets.tf                          # Secrets Manager (all env vars)
+│   ├── variables.tf                        # All input variables
+│   ├── outputs.tf                          # EC2 IP, ECR URL, SQS ARN, etc.
+│   ├── user_data.sh                        # EC2 bootstrap: Docker install + ECR pull
+│   ├── terraform.tfvars.example            # Example variable values
+│   ├── data_managment/                     # Module: 4 DynamoDB tables
+│   │   ├── dynamodb.tf
+│   │   ├── main.tf                         # S3 backend: data/terraform.tfstate
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── evaluations/                        # Module: eval Lambdas + EventBridge
+│   │   ├── lambda.tf
+│   │   ├── eventbridge.tf
+│   │   ├── iam.tf
+│   │   ├── main.tf                         # S3 backend: evaluations/terraform.tfstate
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── monitoring/                         # Module: CloudWatch dashboard + alarms
+│   │   ├── cloudwatch.tf
+│   │   ├── main.tf                         # S3 backend: monitoring/terraform.tfstate
+│   │   └── variables.tf
+│   └── security/                           # Module: Secrets Manager
+│       ├── secrets.tf
+│       ├── main.tf                         # S3 backend: security/terraform.tfstate
+│       ├── outputs.tf
+│       └── variables.tf
+│
+├── tests/                                  # Test suite (34 tests, moto for DynamoDB)
+│   ├── api/
+│   │   └── test_dashboard.py               # Dashboard endpoint tests
+│   ├── lambdas/
+│   │   ├── test_eval_pipeline.py           # Integration: full eval pipeline
+│   │   ├── test_eval_runner.py
+│   │   ├── test_golden_dataset_runner.py
+│   │   ├── test_pca.py
+│   │   └── test_rag_evaluator.py
+│   └── services/
+│       └── test_conversation.py            # DynamoDB conversation service
+│
+├── docs/
+│   └── architecture.md                     # Request flow, eval pipeline, DynamoDB schema
+│
+├── scripts/
+│   ├── deploy.sh                           # Full Terraform + Docker build/push pipeline
+│   └── local_e2e_test.sh                   # 13-section local E2E test (38 checks)
+│
+├── .github/
+│   ├── workflows/ci.yml                    # CI: lint → test → docker build
+│   ├── dependabot.yml                      # Weekly pip + github-actions updates
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── ISSUE_TEMPLATE/                     # bug_report, feature_request, question, config
+│
+├── Dockerfile                              # Multi-stage build, non-root user, HEALTHCHECK
+├── docker-compose.yaml                     # Local Qdrant (port 6333)
+├── pyproject.toml                          # v0.2.0, ruff + pytest config
+├── makefile                                # dev, run, test, e2e, ingest
+├── .env.example                            # All env vars with values redacted
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── LICENSE
+├── README.md
+└── SECURITY.md
 ```
 
 ---
