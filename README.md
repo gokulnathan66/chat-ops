@@ -303,4 +303,47 @@ terraform output sqs_ingestion_url   # SQS queue for manual ingestion trigger
 - `big_tech_company_profiles.csv`
 - `big_tech_financials_summary.csv`
 - `big_tech_segment_revenue.csv`
-                                                
+
+---
+
+## Testing
+
+```bash
+# Unit tests (moto for DynamoDB, mocks for Bedrock)
+make test
+
+# Full local E2E (requires AWS credentials + Docker)
+make e2e
+
+# With coverage
+uv run pytest tests/ --cov=src --cov=evaluations --cov-report=term-missing
+```
+
+---
+
+## Development
+
+```bash
+# Lint
+uv run ruff check .
+
+# Format
+uv run ruff format .
+
+# Ingest local CSV data into Qdrant
+make ingest
+```
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code standards, branch naming, and PR process.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for the vulnerability reporting process. Do not open public issues for security bugs.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
