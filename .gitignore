@@ -41,8 +41,10 @@ Thumbs.db
 *.tfstate.backup
 terraform.tfvars
 *.tfplan
+.terraform.lock.hcl
 
 # Project-specific
 archives/
 .superpowers/
+docs/superpowers/
 

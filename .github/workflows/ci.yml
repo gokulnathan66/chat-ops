@@ -29,11 +29,8 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Install ruff
-        run: uv tool install ruff
-
       - name: Run ruff
-        run: uv tool run ruff check .
+        run: uv run ruff check .
 
   test:
     name: Test
