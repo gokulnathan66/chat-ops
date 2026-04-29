@@ -13,3 +13,4 @@ class GraphState(TypedDict):
     retrieved_docs: NotRequired[list[dict]]
     token_usage: NotRequired[dict]
     latency_ms: NotRequired[float]
+    reason: NotRequired[str]

@@ -198,12 +198,6 @@ class BedrockService:
             ) from exc
         
     @staticmethod
-    def extract_text(response: dict[str, Any]) -> str:
-        content = response.get("output", {}).get("message", {}).get("content", [])
-        text_parts = [item["text"] for item in content if "text" in item]
-        return "\n".join(text_parts).strip()
-
-    @staticmethod
     def pretty_response(response: dict[str, Any]) -> str:
         return json.dumps(response, indent=2, default=str)
     

@@ -28,7 +28,7 @@ def run_golden_question(question: str, expected_answer: str) -> dict:
     bedrock = BedrockService()
     retrieved = semantic_document_search.invoke({"query": question, "top_k": 5})
     docs_text = "\n".join(
-        d.get("text_snippet", str(d))[:300] for d in retrieved
+        d.get("text", str(d))[:300] for d in retrieved
     ) if retrieved else ""
 
     answer = bedrock.converse_text(

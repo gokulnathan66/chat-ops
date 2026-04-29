@@ -8,7 +8,14 @@ from src.setting.config import settings
 from src.services.conversation import ConversationService
 
 router = APIRouter()
-_conversation_svc = ConversationService()
+
+
+def _get_conversation_svc() -> ConversationService:
+    return ConversationService()
+
+
+def _dynamodb():
+    return boto3.resource("dynamodb", region_name=settings.AWS_REGION)
 
 
 class HitlRespondRequest(BaseModel):
@@ -22,21 +29,17 @@ class HitlCreateRequest(BaseModel):
     llm_judge_score: float = 0.0
 
 
-def _dynamodb():
-    return boto3.resource("dynamodb", region_name=settings.AWS_REGION)
-
-
 @router.get("/api/conversations")
 async def list_conversations(status: str = "active", limit: int = 50):
     try:
-        return _conversation_svc.list_conversations(status=status, limit=limit)
+        return _get_conversation_svc().list_conversations(status=status, limit=limit)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"DynamoDB unavailable: {str(e)}")
 
 
 @router.get("/api/conversations/{session_id}")
 async def get_conversation(session_id: str):
-    result = _conversation_svc.get_conversation(session_id)
+    result = _get_conversation_svc().get_conversation(session_id)
     if not result["metadata"]:
         raise HTTPException(status_code=404, detail="Session not found")
     return result
@@ -123,7 +126,7 @@ async def list_hitl(status: str = "pending", limit: int = 50):
 
 @router.post("/api/hitl")
 async def create_hitl(body: HitlCreateRequest):
-    _conversation_svc.write_hitl(
+    _get_conversation_svc().write_hitl(
         body.session_id, body.trigger,
         {"rag_score": body.rag_score, "llm_judge_score": body.llm_judge_score}
     )
@@ -132,7 +135,7 @@ async def create_hitl(body: HitlCreateRequest):
 
 @router.post("/api/hitl/{queue_id}/respond")
 async def respond_hitl(queue_id: str, body: HitlRespondRequest):
-    _conversation_svc.resolve_hitl(queue_id, body.human_response)
+    _get_conversation_svc().resolve_hitl(queue_id, body.human_response)
     return {"status": "resolved"}
 
 
