@@ -5,7 +5,7 @@
 
 ## Overview
 
-Restructure `iac/terraform-aws/` into a multi-environment, multi-stack Terraform layout. Each stack is independently deployable with its own S3 remote state. A root Makefile orchestrates full-environment deploys. No Terragrunt — pure Terraform + Makefile. All stacks standardize on AWS provider `~> 6.0` (the root already locks to 6.41.0; subdirectories currently on 5.x will be upgraded).
+Restructure `iac/terraform-aws/` into a two-layer layout: shared Terraform resource files in `stacks/` (written once) and per-environment variable files in `envs/` (values only, no TF code). Each env×stack combination gets its own isolated S3 remote state. A Makefile orchestrates full-environment deploys. No Terragrunt — pure Terraform + Makefile. All stacks standardize on AWS provider `~> 6.0`.
 
 ---
 
@@ -14,48 +14,54 @@ Restructure `iac/terraform-aws/` into a multi-environment, multi-stack Terraform
 ```
 iac/
 ├── Makefile
-└── envs/
+├── stacks/                        <- TF resource files live here ONCE
+│   ├── data/                      <- DynamoDB tables + S3 documents bucket
+│   │   ├── main.tf                (empty backend "s3" block)
+│   │   ├── variables.tf
+│   │   ├── dynamodb.tf
+│   │   ├── s3.tf
+│   │   └── outputs.tf
+│   ├── security/                  <- Secrets Manager
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── secrets.tf
+│   │   └── outputs.tf
+│   ├── app/                       <- ECR + EC2 + EC2 IAM role/profile
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── ecr.tf
+│   │   ├── ec2.tf
+│   │   ├── iam.tf
+│   │   ├── user_data.sh
+│   │   └── outputs.tf
+│   ├── evaluations/               <- Lambda + SQS + EventBridge + Lambda IAM
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── lambda.tf
+│   │   ├── sqs.tf
+│   │   ├── eventbridge.tf
+│   │   ├── iam.tf
+│   │   └── outputs.tf
+│   └── monitoring/                <- CloudWatch alarms
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── cloudwatch.tf
+│       └── outputs.tf
+└── envs/                          <- only .tfvars, no TF code
     ├── dev/
     │   ├── common.tfvars          <- shared: aws_region, env, project
-    │   ├── data/                  <- DynamoDB tables + S3 documents bucket
-    │   │   ├── main.tf
-    │   │   ├── variables.tf
-    │   │   ├── terraform.tfvars
-    │   │   ├── dynamodb.tf
-    │   │   ├── s3.tf
-    │   │   └── outputs.tf
-    │   ├── security/              <- Secrets Manager
-    │   │   ├── main.tf
-    │   │   ├── variables.tf
-    │   │   ├── terraform.tfvars
-    │   │   ├── secrets.tf
-    │   │   └── outputs.tf
-    │   ├── app/                   <- ECR + EC2 + EC2 IAM role/profile
-    │   │   ├── main.tf
-    │   │   ├── variables.tf
-    │   │   ├── terraform.tfvars
-    │   │   ├── ecr.tf
-    │   │   ├── ec2.tf
-    │   │   ├── iam.tf
-    │   │   ├── user_data.sh       <- EC2 bootstrap script (copied from current root)
-    │   │   └── outputs.tf
-    │   ├── evaluations/           <- Lambda + SQS + EventBridge + Lambda IAM
-    │   │   ├── main.tf
-    │   │   ├── variables.tf
-    │   │   ├── terraform.tfvars
-    │   │   ├── lambda.tf
-    │   │   ├── sqs.tf
-    │   │   ├── eventbridge.tf
-    │   │   ├── iam.tf
-    │   │   └── outputs.tf
-    │   └── monitoring/            <- CloudWatch alarms
-    │       ├── main.tf
-    │       ├── variables.tf
-    │       ├── terraform.tfvars
-    │       ├── cloudwatch.tf
-    │       └── outputs.tf
+    │   ├── data.tfvars
+    │   ├── security.tfvars
+    │   ├── app.tfvars
+    │   ├── evaluations.tfvars
+    │   └── monitoring.tfvars
     └── prod/
-        └── (same structure as dev, different tfvars values)
+        ├── common.tfvars
+        ├── data.tfvars
+        ├── security.tfvars
+        ├── app.tfvars
+        ├── evaluations.tfvars
+        └── monitoring.tfvars
 ```
 
 ---
@@ -74,10 +80,10 @@ iac/
 
 ## Backend Configuration
 
-Every stack's `main.tf` uses an **empty** `backend "s3" {}` block (partial backend config). The Makefile provides the full backend at `init` time via `-backend-config` flags.
+Every stack's `main.tf` uses an **empty** `backend "s3" {}` block. The Makefile injects the full backend config at `init` time, including the env-scoped state key.
 
 ```hcl
-# envs/dev/data/main.tf (representative)
+# stacks/data/main.tf (representative)
 terraform {
   required_version = ">= 1.6"
   required_providers {
@@ -95,18 +101,18 @@ provider "aws" {
 ```
 
 ```makefile
-# Makefile — backend config injected at init time
 STATE_BUCKET := llmops-terraform-state-613884141368
 STATE_REGION := ap-south-1
 
 init:
-	terraform -chdir=envs/$(ENV)/$(STACK) init \
+	terraform -chdir=stacks/$(STACK) init \
+	  -reconfigure \
 	  -backend-config="bucket=$(STATE_BUCKET)" \
 	  -backend-config="key=$(ENV)/$(STACK)/terraform.tfstate" \
 	  -backend-config="region=$(STATE_REGION)"
 ```
 
-State bucket name lives in exactly one place: the Makefile. State keys follow the pattern `{env}/{stack}/terraform.tfstate`.
+The `-reconfigure` flag is required when switching `ENV` on the same stack directory, since the backend key changes between environments.
 
 ---
 
@@ -132,6 +138,21 @@ make destroy-all  ENV=dev    # destroys in reverse dependency order
 
 Dependency order: `data` -> `security` -> `app` -> `evaluations` -> `monitoring`
 
+### Var-file resolution
+
+Stack TF files are in `stacks/$(STACK)`; var files are in `envs/$(ENV)/`. The Makefile uses `$(CURDIR)` (the `iac/` directory where `make` is invoked) for unambiguous absolute paths:
+
+```makefile
+VARFLAGS = -var-file=$(CURDIR)/envs/$(ENV)/common.tfvars \
+           -var-file=$(CURDIR)/envs/$(ENV)/$(STACK).tfvars
+
+plan:
+	terraform -chdir=stacks/$(STACK) plan $(VARFLAGS)
+
+apply:
+	terraform -chdir=stacks/$(STACK) apply $(VARFLAGS)
+```
+
 ---
 
 ## Cross-Stack Wiring
@@ -142,14 +163,13 @@ No `terraform_remote_state`. The Makefile extracts outputs from upstream stacks 
 
 ```makefile
 apply-evaluations: apply-data
-	$(eval S3_BUCKET    := $(shell terraform -chdir=envs/$(ENV)/data output -raw s3_documents_bucket))
-	$(eval CONV_TABLE   := $(shell terraform -chdir=envs/$(ENV)/data output -raw conversations_table))
-	$(eval EVAL_TABLE   := $(shell terraform -chdir=envs/$(ENV)/data output -raw evaluations_table))
-	$(eval HITL_TABLE   := $(shell terraform -chdir=envs/$(ENV)/data output -raw hitl_table))
-	$(eval GOLDEN_TABLE := $(shell terraform -chdir=envs/$(ENV)/data output -raw golden_results_table))
-	terraform -chdir=envs/$(ENV)/evaluations apply \
-	  -var-file=../common.tfvars \
-	  -var-file=./terraform.tfvars \
+	$(eval S3_BUCKET    := $(shell terraform -chdir=stacks/data output -raw s3_documents_bucket))
+	$(eval CONV_TABLE   := $(shell terraform -chdir=stacks/data output -raw conversations_table))
+	$(eval EVAL_TABLE   := $(shell terraform -chdir=stacks/data output -raw evaluations_table))
+	$(eval HITL_TABLE   := $(shell terraform -chdir=stacks/data output -raw hitl_table))
+	$(eval GOLDEN_TABLE := $(shell terraform -chdir=stacks/data output -raw golden_results_table))
+	terraform -chdir=stacks/evaluations apply \
+	  $(VARFLAGS) \
 	  -var="s3_bucket_name=$(S3_BUCKET)" \
 	  -var="conversations_table=$(CONV_TABLE)" \
 	  -var="evaluations_table=$(EVAL_TABLE)" \
@@ -157,61 +177,62 @@ apply-evaluations: apply-data
 	  -var="golden_results_table=$(GOLDEN_TABLE)"
 ```
 
-**app receives from data + security:**
+`terraform output` on a `stacks/` directory reads whichever state was last initialized (the last `init` with a specific `key=`). In `apply-all`, the Makefile initializes and applies stacks in order, so outputs always reflect the correct env's state.
 
-The `app` stack receives `s3_documents_bucket` from `data` and `app_secret_arn` from `security` (for the EC2 IAM policy and user_data template).
+**app receives from data + security:**  
+`s3_documents_bucket` (from data) and `app_secret_arn` (from security) passed as `-var` flags.
 
-**monitoring receives from app + evaluations:**
-
-The `monitoring` stack receives the EC2 instance ID from `app` and Lambda function names from `evaluations` to target CloudWatch alarms correctly.
+**monitoring receives from app + evaluations:**  
+EC2 instance ID (from app) and Lambda function names (from evaluations) passed as `-var` flags.
 
 ---
 
 ## Variable Strategy
 
-- `envs/{env}/common.tfvars` — env-wide values: `aws_region`, `env` (string tag), project name
-- `envs/{env}/{stack}/terraform.tfvars` — stack-specific values (thresholds, instance types, cron schedules)
-- Makefile always passes both: `-var-file=../common.tfvars -var-file=./terraform.tfvars`
-- Cross-stack values (ARNs, bucket names, table names, function names) are **never** hardcoded in tfvars — they come from `terraform output` at apply time
+- `envs/{env}/common.tfvars` — env-wide: `aws_region`, `env` (string tag), `project`
+- `envs/{env}/{stack}.tfvars` — stack-specific: thresholds, instance types, cron schedules, image tags
+- Cross-stack values (ARNs, bucket names, table names, function names) are **never** in tfvars — injected at apply time by the Makefile via `terraform output`
 
 ---
 
 ## Migration from Current Structure
 
-The current `iac/terraform-aws/` flat layout will be replaced. Resources map to new stacks as follows:
-
-| Current file | New stack |
+| Current file | New location |
 |---|---|
-| `main.tf` (S3 bucket) | `data/s3.tf` |
-| `ec2.tf`, `ecr.tf` + EC2 IAM in `ec2.tf` | `app/` |
-| `user_data.sh` | `app/user_data.sh` |
-| `iam.tf` (Lambda IAM) | `evaluations/iam.tf` |
-| `lambda.tf` | `evaluations/lambda.tf` |
-| `sqs.tf` | `evaluations/sqs.tf` |
-| `event_bridge.tf` | `evaluations/eventbridge.tf` |
-| `cloudwatch.tf` | `monitoring/cloudwatch.tf` |
-| `secrets.tf` (root) | `security/secrets.tf` |
-| `data_managment/dynamodb.tf` | `data/dynamodb.tf` |
-| `evaluations/` (subdir) | merged into `evaluations/` stack |
-| `security/` (subdir) | merged into `security/` stack |
-| `monitoring/` (subdir) | merged into `monitoring/` stack |
+| `main.tf` (S3 bucket) | `stacks/data/s3.tf` |
+| `ec2.tf`, `ecr.tf` + EC2 IAM in `ec2.tf` | `stacks/app/` |
+| `user_data.sh` | `stacks/app/user_data.sh` |
+| `iam.tf` (Lambda IAM) | `stacks/evaluations/iam.tf` |
+| `lambda.tf` | `stacks/evaluations/lambda.tf` |
+| `sqs.tf` | `stacks/evaluations/sqs.tf` |
+| `event_bridge.tf` | `stacks/evaluations/eventbridge.tf` |
+| `cloudwatch.tf` | `stacks/monitoring/cloudwatch.tf` |
+| `secrets.tf` (root) | `stacks/security/secrets.tf` |
+| `data_managment/dynamodb.tf` | `stacks/data/dynamodb.tf` |
+| `evaluations/` (subdir) | merged into `stacks/evaluations/` |
+| `security/` (subdir) | merged into `stacks/security/` |
+| `monitoring/` (subdir) | merged into `stacks/monitoring/` |
+| `terraform.tfvars` (root) | split into `envs/dev/*.tfvars` |
 
-The subdirectories (`data_managment/`, `evaluations/`, `security/`, `monitoring/`) and the root flat files are removed. Only `envs/` and `Makefile` remain under `iac/`. The `.terraform/` cache directories and `.terraform.lock.hcl` files from the old structure are also deleted.
+The entire `iac/terraform-aws/` directory is removed and replaced with `iac/stacks/` + `iac/envs/` + `iac/Makefile`.
 
 ---
 
-## Independent Operation
-
-Any stack can be operated without the Makefile:
+## Independent Operation (without Makefile)
 
 ```bash
-cd iac/envs/dev/data
-terraform init \
+cd iac
+terraform -chdir=stacks/data init \
+  -reconfigure \
   -backend-config="bucket=llmops-terraform-state-613884141368" \
   -backend-config="key=dev/data/terraform.tfstate" \
   -backend-config="region=ap-south-1"
-terraform plan -var-file=../common.tfvars -var-file=./terraform.tfvars
-terraform apply -var-file=../common.tfvars -var-file=./terraform.tfvars
+terraform -chdir=stacks/data plan \
+  -var-file=$(pwd)/envs/dev/common.tfvars \
+  -var-file=$(pwd)/envs/dev/data.tfvars
+terraform -chdir=stacks/data apply \
+  -var-file=$(pwd)/envs/dev/common.tfvars \
+  -var-file=$(pwd)/envs/dev/data.tfvars
 ```
 
-Cross-stack vars (ARNs, table names) must be supplied manually via `-var` when operating standalone. The Makefile automates this for `apply-all`.
+Cross-stack vars must be supplied manually via `-var` when operating standalone.
