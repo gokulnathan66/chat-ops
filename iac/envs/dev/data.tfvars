@@ -1,0 +1,5 @@
+conversations_table  = "conversations"
+evaluations_table    = "evaluations"
+hitl_table           = "hitl_queue"
+golden_results_table = "golden_results"
+s3_bucket_name       = ""

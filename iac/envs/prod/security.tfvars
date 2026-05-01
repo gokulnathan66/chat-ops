@@ -1,0 +1,15 @@
+# App credentials — populate before applying
+model_id          = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+qdrant_host       = ""
+qdrant_port       = "6333"
+qdrant_api_key    = ""
+qdrant_collection = "documents"
+langfuse_public_key = ""
+langfuse_secret_key = ""
+langfuse_host     = ""
+s3_bucket_name    = ""
+
+conversations_table  = ""
+evaluations_table    = ""
+hitl_table           = ""
+golden_results_table = ""
