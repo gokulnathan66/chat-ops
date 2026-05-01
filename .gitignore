@@ -43,6 +43,10 @@ terraform.tfvars
 *.tfplan
 .terraform.lock.hcl
 
+# Lambda build artifact (zip built by CI; keep directory tracked)
+iac/dist/*.zip
+!iac/dist/.gitkeep
+
 # Project-specific
 archives/
 .superpowers/
