@@ -1,15 +1,24 @@
 import json
-from datetime import date
+import logging
+import uuid
+from datetime import UTC, date, datetime
 
 import boto3
 from boto3.dynamodb.conditions import Key
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from src.services.conversation import ConversationService
 from src.setting.config import settings
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+ALLOWED_EXTENSIONS = {".pdf", ".txt", ".csv"}
+LAMBDA_FUNCTION = "llmops-dev-qdrant-ingestion"
+_EVAL_TYPE = "ingestion_job"
+_SK = "ingestion_job"
 
 
 def _get_conversation_svc() -> ConversationService:
@@ -18,6 +27,61 @@ def _get_conversation_svc() -> ConversationService:
 
 def _dynamodb():
     return boto3.resource("dynamodb", region_name=settings.AWS_REGION)
+
+
+def _s3():
+    return boto3.client("s3", region_name=settings.AWS_REGION)
+
+
+def _lambda_client():
+    return boto3.client("lambda", region_name=settings.AWS_REGION)
+
+
+def _write_ingestion_job(job_id: str, s3_key: str) -> None:
+    _dynamodb().Table(settings.EVALUATIONS_TABLE).put_item(Item={
+        "session_id": job_id,
+        "sk": _SK,
+        "eval_type": _EVAL_TYPE,
+        "status": "started",
+        "s3_key": s3_key,
+        "created_at": datetime.now(UTC).isoformat(),
+    })
+
+
+def _read_ingestion_job(job_id: str) -> dict | None:
+    try:
+        resp = _dynamodb().Table(settings.EVALUATIONS_TABLE).get_item(
+            Key={"session_id": job_id, "sk": _SK}
+        )
+        return resp.get("Item")
+    except Exception:
+        return None
+
+
+def _list_ingestion_jobs(limit: int = 20) -> list[dict]:
+    try:
+        resp = _dynamodb().Table(settings.EVALUATIONS_TABLE).query(
+            IndexName="eval_type-created_at-index",
+            KeyConditionExpression=Key("eval_type").eq(_EVAL_TYPE),
+            Limit=limit,
+            ScanIndexForward=False,
+        )
+        return resp.get("Items", [])
+    except Exception as exc:
+        logger.warning("Could not list ingestion jobs: %s", exc)
+        return []
+
+
+def _fire_ingestion_lambda(job_id: str, s3_key: str, bucket: str) -> None:
+    _lambda_client().invoke(
+        FunctionName=LAMBDA_FUNCTION,
+        InvocationType="Event",
+        Payload=json.dumps({
+            "job_id": job_id,
+            "s3_key": s3_key,
+            "bucket": bucket,
+        }).encode(),
+    )
 
 
 class HitlRespondRequest(BaseModel):
@@ -159,10 +223,53 @@ async def start_ingestion(body: dict):
     s3_key = body.get("s3_key")
     if not s3_key:
         raise HTTPException(status_code=422, detail="s3_key is required")
-    lambda_client = boto3.client("lambda", region_name=settings.AWS_REGION)
-    lambda_client.invoke(
-        FunctionName="qdrant_ingestion",
-        InvocationType="Event",
-        Payload=json.dumps({"s3_key": s3_key, "bucket": settings.S3_BUCKET_NAME}).encode(),
-    )
-    return {"status": "ingestion_started", "s3_key": s3_key}
+
+    job_id = str(uuid.uuid4())
+    _write_ingestion_job(job_id, s3_key)
+    _fire_ingestion_lambda(job_id, s3_key, settings.S3_BUCKET_NAME)
+
+    return {"job_id": job_id, "status": "started", "s3_key": s3_key}
+
+
+@router.post("/api/ingestion/upload")
+async def upload_and_ingest(file: UploadFile = File(...)):
+    import os
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported file type '{ext}'. Allowed: {', '.join(ALLOWED_EXTENSIONS)}",
+        )
+
+    job_id = str(uuid.uuid4())
+    s3_key = f"uploads/{job_id}/{file.filename}"
+
+    try:
+        s3 = boto3.client("s3", region_name=settings.AWS_REGION)
+        content = await file.read()
+        s3.put_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=s3_key,
+            Body=content,
+            ContentType=file.content_type or "application/octet-stream",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"S3 upload failed: {e}") from e
+
+    _write_ingestion_job(job_id, s3_key)
+    _fire_ingestion_lambda(job_id, s3_key, settings.S3_BUCKET_NAME)
+
+    return {"job_id": job_id, "status": "started", "s3_key": s3_key, "filename": file.filename}
+
+
+@router.get("/api/ingestion/status/{job_id}")
+async def get_ingestion_status(job_id: str):
+    job = _read_ingestion_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+
+@router.get("/api/ingestion/history")
+async def ingestion_history(limit: int = 20):
+    return _list_ingestion_jobs(limit)

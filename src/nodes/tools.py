@@ -4,6 +4,7 @@ import time
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langfuse import observe
+from langfuse.langchain import CallbackHandler
 from langgraph.types import Command
 
 from src.services.bedrock import BedrockService
@@ -61,11 +62,13 @@ def tools_node(state: GraphState):
     user_query = state.get("user_query", "").strip()
 
     start = time.time()
+    langfuse_handler = CallbackHandler()
     response = bedrock_service.invoke_agent(
         user_query=user_query,
         tool_defs=TOOL_DEFS,
         system_prompt=_get_system_prompt(),
         messages=[],
+        callbacks=[langfuse_handler],
     )
     latency_ms = (time.time() - start) * 1000
 

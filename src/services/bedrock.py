@@ -233,6 +233,7 @@ class BedrockService:
         tool_defs: Sequence[dict[str, Any]],
         system_prompt: str,
         messages: list[dict[str, Any]] | None = None,
+        callbacks: list[Any] | None = None,
     ) -> dict[str, Any]:
         agent = self.create_agent(
             tool_defs=tool_defs,
@@ -247,7 +248,8 @@ class BedrockService:
             }
         )
 
-        return agent.invoke({"messages": input_messages})
+        config = {"callbacks": callbacks} if callbacks else {}
+        return agent.invoke({"messages": input_messages}, config=config)
 
     @staticmethod
     def extract_text(agent_response: dict[str, Any]) -> str:
