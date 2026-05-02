@@ -1,74 +1,69 @@
 'use client';
 import useSWR from 'swr';
 import KpiCards from '@/components/KpiCards';
+import { ScoreBar } from '@/components/ScoreBar';
+import { CopyId } from '@/components/CopyId';
 import { MetricsSummary, EvalRecord } from '@/lib/api';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-function scoreColor(score: string | undefined) {
-  if (!score) return 'text-gray-500';
-  const n = parseFloat(score);
-  if (n >= 0.8) return 'text-green-400';
-  if (n >= 0.6) return 'text-yellow-400';
-  return 'text-red-400';
-}
-
 export default function OverviewPage() {
   const { data: metrics } = useSWR<MetricsSummary>('/api/metrics/summary', fetcher, { refreshInterval: 30000 });
   const { data: evals = [] } = useSWR<EvalRecord[]>('/api/evaluations?type=rag&limit=10', fetcher, { refreshInterval: 30000 });
-  const { data: pcaEvals = [] } = useSWR<EvalRecord[]>('/api/evaluations?type=pca&limit=1', fetcher, { refreshInterval: 30000 });
-
-  const latestPca = pcaEvals[0];
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      {metrics ? <KpiCards metrics={metrics} /> : (
-        <div className="grid grid-cols-5 gap-4">
+    <div className="space-y-6">
+      <div className="page-header">
+        <p className="page-eyebrow">LLMOps</p>
+        <h1 className="page-title">Overview</h1>
+        <p className="page-subtitle">Real-time metrics, evaluation scores, and pipeline health.</p>
+      </div>
+
+      {metrics ? (
+        <KpiCards metrics={metrics} />
+      ) : (
+        <div className="grid grid-cols-5 gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-4 h-20 animate-pulse" />
+            <div key={i} className="card p-4 h-20 animate-pulse bg-gray-50 dark:bg-gray-800" />
           ))}
         </div>
       )}
 
-      <div>
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent RAG Evaluations</h2>
-        <div className="border border-gray-800 rounded-lg overflow-hidden">
-          <div className="grid grid-cols-5 px-4 py-2 text-[11px] text-gray-600 border-b border-gray-800 bg-gray-900">
-            <span>Session</span><span>RAG Score</span><span>Faithfulness</span><span>Re-retrieved</span><span>HITL</span>
+      <div className="card overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Recent RAG Evaluations</h2>
+            <span className="flex items-center gap-1 text-[10px] font-medium text-brand-600 dark:text-brand-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-600 dark:bg-brand-400 animate-pulse" />
+              Live
+            </span>
           </div>
-          {evals.length === 0 && <p className="text-gray-600 text-sm p-4">No evaluations yet.</p>}
+          <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded text-xs font-medium">{evals.length}</span>
+        </div>
+        <div className="grid grid-cols-5 table-header">
+          <span>Session</span><span>RAG Score</span><span>Faithfulness</span><span>Re-retrieved</span><span>HITL</span>
+        </div>
+        <div>
+          {evals.length === 0 && (
+            <p className="text-gray-400 dark:text-gray-500 text-sm px-4 py-6">No evaluations yet.</p>
+          )}
           {evals.map((e) => (
-            <div key={e.sk} className="grid grid-cols-5 px-4 py-2.5 text-xs border-b border-gray-900 hover:bg-gray-900">
-              <span className="font-mono text-blue-400 truncate">{e.session_id.slice(0, 18)}…</span>
-              <span className={scoreColor(e.rag_score)}>{e.rag_score ? parseFloat(e.rag_score).toFixed(2) : '—'}</span>
-              <span className={scoreColor(e.faithfulness)}>{e.faithfulness ? parseFloat(e.faithfulness).toFixed(2) : '—'}</span>
-              <span className={e.re_retrieved === 'True' ? 'text-yellow-400' : 'text-gray-500'}>{e.re_retrieved === 'True' ? 'Yes' : 'No'}</span>
-              <span className={e.hitl_flagged ? 'text-red-400 font-semibold' : 'text-gray-600'}>{e.hitl_flagged ? '⚑ Flagged' : '—'}</span>
+            <div key={e.sk} className="grid grid-cols-5 table-row">
+              <CopyId id={e.session_id} />
+              <div>{e.rag_score ? <ScoreBar value={parseFloat(e.rag_score)} /> : <span className="text-gray-400">—</span>}</div>
+              <div>{e.faithfulness ? <ScoreBar value={parseFloat(e.faithfulness)} /> : <span className="text-gray-400">—</span>}</div>
+              {e.re_retrieved === 'True'
+                ? <span className="badge-brand w-fit">↻ Yes</span>
+                : <span className="text-gray-400 dark:text-gray-500 text-xs">No</span>
+              }
+              {e.hitl_flagged
+                ? <span className="badge-brand w-fit">⚑ Flagged</span>
+                : <span className="text-gray-400 dark:text-gray-500 text-xs">—</span>
+              }
             </div>
           ))}
         </div>
       </div>
-
-      {latestPca && (
-        <div>
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Latest PCA</h2>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {latestPca.pca_topics?.map((t) => (
-              <span key={t} className="bg-purple-900 text-purple-300 px-3 py-1 rounded-full">{t}</span>
-            ))}
-            <span className={`px-3 py-1 rounded-full font-medium ${
-              latestPca.pca_sentiment === 'positive' ? 'bg-green-900 text-green-300' :
-              latestPca.pca_sentiment === 'negative' ? 'bg-red-900 text-red-300' :
-              'bg-gray-800 text-gray-400'
-            }`}>
-              {latestPca.pca_sentiment}
-            </span>
-            {latestPca.pca_unresolved?.map((q) => (
-              <span key={q} className="bg-red-950 text-red-400 px-3 py-1 rounded-full">❓ {q}</span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
