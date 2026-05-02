@@ -100,7 +100,7 @@ Linear destroy order (reverse): `monitoring` → `app` → `evaluations` → `se
 
 Every stack's `main.tf` uses an **empty** `backend "s3" {}` block (partial backend config). The Makefile injects the full backend at `init` time.
 
-> **Pre-requisite:** The state bucket (`llmops-terraform-state-613884141368`) must exist before running any `make` target. It is not managed by these stacks — create it once manually or via a bootstrap script before first use.
+> **Pre-requisite:** The state bucket (`llmops-langgraph-terraform`) must exist before running any `make` target. It is not managed by these stacks — create it once manually or via a bootstrap script before first use.
 
 ```hcl
 # stacks/data/main.tf (representative — all stacks identical except stack name)
@@ -194,7 +194,7 @@ No downstream consumers. Outputs are informational only (alarm ARNs, etc.).
 
 ```makefile
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-STATE_BUCKET := llmops-terraform-state-613884141368
+STATE_BUCKET := llmops-langgraph-terraform
 STATE_REGION := ap-south-1
 
 VARFLAGS = -var-file=$(MAKEFILE_DIR)envs/$(ENV)/common.tfvars \
@@ -392,7 +392,7 @@ cd /path/to/repo/iac
 
 terraform -chdir=stacks/data init \
   -reconfigure \
-  -backend-config="bucket=llmops-terraform-state-613884141368" \
+  -backend-config="bucket=llmops-langgraph-terraform" \
   -backend-config="key=dev/data/terraform.tfstate" \
   -backend-config="region=ap-south-1"
 

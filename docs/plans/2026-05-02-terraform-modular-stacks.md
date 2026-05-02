@@ -80,7 +80,7 @@ mkdir -p iac/stacks/data iac/stacks/security iac/stacks/evaluations \
 
 ```makefile
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-STATE_BUCKET := llmops-terraform-state-613884141368
+STATE_BUCKET := llmops-langgraph-terraform
 STATE_REGION := ap-south-1
 
 STACKS := data security evaluations app monitoring
