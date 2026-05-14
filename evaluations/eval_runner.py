@@ -1,43 +1,23 @@
-from datetime import UTC, datetime, timedelta
+from __future__ import annotations
 
-import boto3
-from boto3.dynamodb.conditions import Key
+import logging
 
-from evaluations.pca import analyze_conversation
-from evaluations.rag_evaluator import evaluate_session
-from src.services.conversation import ConversationService
-from src.setting.config import settings
+from evaluations.rag_evaluator import run_ingestion_evals
 
-
-def get_stale_sessions() -> list[str]:
-    """Return active session IDs not updated within INACTIVITY_MINUTES."""
-    dynamodb = boto3.resource("dynamodb", region_name=settings.AWS_REGION)
-    table = dynamodb.Table(settings.CONVERSATIONS_TABLE)
-    cutoff = (
-        datetime.now(UTC) - timedelta(minutes=settings.INACTIVITY_MINUTES)
-    ).isoformat()
-    response = table.query(
-        IndexName="status-last_updated_at-index",
-        KeyConditionExpression=Key("status").eq("active") & Key("last_updated_at").lt(cutoff),
-        ProjectionExpression="session_id",
-    )
-    return [item["session_id"] for item in response.get("Items", [])]
-
-
-def run_evals_for_session(session_id: str) -> dict:
-    conv_svc = ConversationService()
-    conv_svc.mark_complete(session_id)
-    rag_result = evaluate_session(session_id)
-    pca_result = analyze_conversation(session_id)
-    return {"session_id": session_id, "rag": rag_result, "pca": pca_result}
+logging.getLogger().setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def handler(event, context):
-    session_ids = get_stale_sessions()
-    results = []
-    for sid in session_ids:
-        try:
-            results.append(run_evals_for_session(sid))
-        except Exception as e:
-            results.append({"session_id": sid, "error": str(e)})
-    return {"evaluated": len(results), "results": results}
+    """Triggered by qdrant_ingestion Lambda after a successful document ingest."""
+    logger.info("eval_runner invoked | event=%s", event)
+
+    job_id = event.get("job_id")
+    if not job_id:
+        logger.warning("eval_runner invoked without job_id | event=%s", event)
+        return {"error": "job_id required"}
+
+    logger.info("eval_runner started | job_id=%s", job_id)
+    results = run_ingestion_evals(job_id)
+    logger.info("eval_runner complete | job_id=%s evaluated=%d results=%s", job_id, len(results), results)
+    return {"job_id": job_id, "queries_evaluated": len(results), "results": results}
