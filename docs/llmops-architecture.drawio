@@ -1,0 +1,364 @@
+<mxfile host="app.diagrams.net" modified="2026-05-04" version="21.0.0">
+  <diagram name="LLMOps Architecture" id="llmops-arch-v2">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ===== TITLE ===== -->
+        <mxCell id="title" value="LLMOps — LangGraph RAG API Architecture"
+          style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="300" y="15" width="980" height="48" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LAYER 1: CLIENT ===== -->
+        <mxCell id="bg_client" value="Client Layer"
+          style="rounded=1;whiteSpace=nowrap;html=1;fillColor=#EAF4FF;strokeColor=#6c8ebf;verticalAlign=top;align=left;spacingLeft=14;fontSize=13;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="75" width="1480" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ai_iface" value="&lt;b&gt;AI Interface Dashboard&lt;/b&gt;&lt;br&gt;dashboard/ai-interface (Next.js)&lt;br&gt;&lt;i&gt;/chat &amp;nbsp;·&amp;nbsp; /sessions&lt;/i&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="110" y="120" width="290" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="mon_dash" value="&lt;b&gt;Realtime Monitoring Dashboard&lt;/b&gt;&lt;br&gt;dashboard/realtime-monitoring (Next.js)&lt;br&gt;&lt;i&gt;/evals &amp;nbsp;·&amp;nbsp; /hitl &amp;nbsp;·&amp;nbsp; /pca &amp;nbsp;·&amp;nbsp; ingestion&lt;/i&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="480" y="120" width="320" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LAYER 2: API ===== -->
+        <mxCell id="bg_api" value="API Layer — FastAPI  (src/api/)"
+          style="rounded=1;whiteSpace=nowrap;html=1;fillColor=#E8F5E9;strokeColor=#82b366;verticalAlign=top;align=left;spacingLeft=14;fontSize=13;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="280" width="1480" height="185" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="routes" value="&lt;b&gt;routes.py&lt;/b&gt;&lt;br&gt;POST /api/chat&lt;br&gt;GET · POST /api/sessions&lt;br&gt;GET /api/history/{session_id}"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="110" y="325" width="275" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="dashapi" value="&lt;b&gt;dashboard.py&lt;/b&gt;&lt;br&gt;Session Management&lt;br&gt;History &amp;amp; Eval APIs&lt;br&gt;Langfuse callback handler"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="470" y="325" width="275" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="config_lbl" value="&lt;b&gt;src/setting/config.py&lt;/b&gt;&lt;br&gt;Pydantic Settings&lt;br&gt;Env-var driven config&lt;br&gt;MODEL_ID · QDRANT_HOST&lt;br&gt;LANGFUSE_* · S3_BUCKET"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff0;strokeColor=#82b366;fontSize=10;fontStyle=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="1200" y="318" width="270" height="115" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LAYER 3: LANGGRAPH ===== -->
+        <mxCell id="bg_graph" value="LangGraph State Machine  (src/graph/builder.py)"
+          style="rounded=1;whiteSpace=nowrap;html=1;fillColor=#FFF8E1;strokeColor=#d79b00;verticalAlign=top;align=left;spacingLeft=14;fontSize=13;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="490" width="1480" height="290" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="graph_state" value="&lt;b&gt;GraphState&lt;/b&gt;&lt;br&gt;src/states/config.py&lt;br&gt;TypedDict"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#d79b00;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="60" y="590" width="145" height="95" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="intent" value="&lt;b&gt;Intent Node&lt;/b&gt;&lt;br&gt;src/nodes/intent.py&lt;br&gt;converse_structured()&lt;br&gt;Classifies: general | tools"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#d79b00;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="240" y="572" width="235" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="router" value="Router"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFB74D;strokeColor=#d79b00;fontStyle=1;fontSize=13;"
+          vertex="1" parent="1">
+          <mxGeometry x="540" y="560" width="140" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="general_node" value="&lt;b&gt;General Node&lt;/b&gt;&lt;br&gt;src/nodes/general.py&lt;br&gt;converse_text()&lt;br&gt;Direct LLM response"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#d79b00;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="760" y="535" width="235" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tools_node" value="&lt;b&gt;Tools Node&lt;/b&gt;&lt;br&gt;src/nodes/tools.py&lt;br&gt;invoke_agent()&lt;br&gt;LangChain ReAct Agent"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#d79b00;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="760" y="655" width="235" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="rag_tool" value="&lt;b&gt;semantic_document_search&lt;/b&gt;&lt;br&gt;src/tools/rag.py&lt;br&gt;LangChain Tool&lt;br&gt;Qdrant similarity search"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCBC;strokeColor=#b85450;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="1080" y="648" width="280" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LAYER 4: SERVICES ===== -->
+        <mxCell id="bg_svc" value="Services Layer  (src/services/)"
+          style="rounded=1;whiteSpace=nowrap;html=1;fillColor=#F3E5F5;strokeColor=#9673a6;verticalAlign=top;align=left;spacingLeft=14;fontSize=13;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="810" width="1480" height="200" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="bsvc" value="&lt;b&gt;BedrockService&lt;/b&gt;&lt;br&gt;bedrock.py&lt;br&gt;converse_text()&lt;br&gt;converse_structured()&lt;br&gt;converse_stream()&lt;br&gt;invoke_agent()"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="65" y="850" width="215" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="qsvc" value="&lt;b&gt;QdrantService&lt;/b&gt;&lt;br&gt;qdrant.py&lt;br&gt;semantic_search()&lt;br&gt;upsert_documents()&lt;br&gt;Collection management"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="300" y="850" width="210" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="esvc" value="&lt;b&gt;EmbeddingService&lt;/b&gt;&lt;br&gt;embedding.py&lt;br&gt;embed_text()&lt;br&gt;text → dense vectors&lt;br&gt;via Bedrock"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="530" y="850" width="210" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="psvc" value="&lt;b&gt;PromptService&lt;/b&gt;&lt;br&gt;prompt.py&lt;br&gt;System prompts&lt;br&gt;Template management"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="760" y="850" width="200" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="csvc" value="&lt;b&gt;ConversationService&lt;/b&gt;&lt;br&gt;conversation.py&lt;br&gt;Session management&lt;br&gt;History store&lt;br&gt;DynamoDB backend"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="975" y="850" width="210" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LAYER 5: EXTERNAL SERVICES ===== -->
+        <mxCell id="bg_ext" value="External Services"
+          style="rounded=1;whiteSpace=nowrap;html=1;fillColor=#F5F5F5;strokeColor=#555555;verticalAlign=top;align=left;spacingLeft=14;fontSize=13;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="1040" width="1480" height="230" as="geometry"/>
+        </mxCell>
+
+        <!-- AWS Bedrock Icon -->
+        <mxCell id="bedrock_icon" value="AWS Bedrock&#xa;Claude Haiku 4.5&#xa;MODEL_ID ARN"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#01A88D;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.bedrock;"
+          vertex="1" parent="1">
+          <mxGeometry x="120" y="1090" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- Qdrant (branded box) -->
+        <mxCell id="qdrant_ext" value="&lt;b&gt;Qdrant Vector Database&lt;/b&gt;&lt;br&gt;QDRANT_HOST · QDRANT_PORT&lt;br&gt;QDRANT_COLLECTION&lt;br&gt;Dense vector similarity search"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DC244C;strokeColor=#9E0022;fontColor=#ffffff;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="330" y="1095" width="280" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- Langfuse (branded box) -->
+        <mxCell id="langfuse_ext" value="&lt;b&gt;Langfuse&lt;/b&gt;&lt;br&gt;LLM Observability &amp;amp; Tracing&lt;br&gt;LANGFUSE_PUBLIC_KEY · SECRET_KEY&lt;br&gt;Traces · Evals · Datasets · HITL"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF5C00;strokeColor=#CC4900;fontColor=#ffffff;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="700" y="1095" width="290" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LAYER 6: AWS INFRASTRUCTURE ===== -->
+        <mxCell id="bg_infra" value="AWS Infrastructure  (iac/stacks/)"
+          style="rounded=1;whiteSpace=nowrap;html=1;fillColor=#FFF8F0;strokeColor=#FF9900;verticalAlign=top;align=left;spacingLeft=14;fontSize=13;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="1300" width="1480" height="230" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Ingestion -->
+        <mxCell id="lambda_ing" value="Lambda&#xa;S3 Ingestion&#xa;qdrant_ingestion.py"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;"
+          vertex="1" parent="1">
+          <mxGeometry x="95" y="1345" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Eval -->
+        <mxCell id="lambda_eval" value="Lambda&#xa;RAG Evaluator&#xa;rag_evaluator.py"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;"
+          vertex="1" parent="1">
+          <mxGeometry x="295" y="1345" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- S3 Bucket -->
+        <mxCell id="s3_bucket" value="S3 Bucket&#xa;Document Storage&#xa;S3_BUCKET_NAME"
+          style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#7AA116;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.bucket;"
+          vertex="1" parent="1">
+          <mxGeometry x="490" y="1345" width="75" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- DynamoDB -->
+        <mxCell id="dynamo" value="DynamoDB&#xa;Conversation History&#xa;iac/stacks/data/"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.dynamodb;"
+          vertex="1" parent="1">
+          <mxGeometry x="685" y="1345" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- EventBridge -->
+        <mxCell id="eventbridge" value="EventBridge&#xa;Async Eval Triggers&#xa;iac/stacks/evaluations/"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eventbridge;"
+          vertex="1" parent="1">
+          <mxGeometry x="885" y="1345" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- Secrets Manager -->
+        <mxCell id="secrets" value="Secrets Manager&#xa;API Keys &amp; Creds&#xa;iac/stacks/security/"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#DD344C;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.secrets_manager;"
+          vertex="1" parent="1">
+          <mxGeometry x="1090" y="1345" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- API Gateway (used conceptually for FastAPI) -->
+        <mxCell id="apigw" value="API Gateway&#xa;/api/* routes&#xa;iac/stacks/monitoring/"
+          style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.api_gateway;"
+          vertex="1" parent="1">
+          <mxGeometry x="1295" y="1345" width="78" height="78" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== EDGES ===== -->
+
+        <!-- Clients → API -->
+        <mxCell id="e1" value="HTTP REST"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#4472CA;"
+          edge="1" source="ai_iface" target="routes" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" value="HTTP REST"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#4472CA;"
+          edge="1" source="mon_dash" target="dashapi" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → Graph -->
+        <mxCell id="e3" value="invoke(GraphState)"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#d79b00;"
+          edge="1" source="routes" target="intent" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3b"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;"
+          edge="1" source="dashapi" target="csvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3c"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;"
+          edge="1" source="routes" target="csvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- GraphState → Intent -->
+        <mxCell id="e_gs"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d79b00;"
+          edge="1" source="graph_state" target="intent" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Graph internal flow -->
+        <mxCell id="e4"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#d79b00;"
+          edge="1" source="intent" target="router" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" value="general"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#2e7d32;"
+          edge="1" source="router" target="general_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="tools"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#b85450;"
+          edge="1" source="router" target="tools_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;"
+          edge="1" source="tools_node" target="rag_tool" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Nodes → Services -->
+        <mxCell id="e8"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;"
+          edge="1" source="general_node" target="bsvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;"
+          edge="1" source="tools_node" target="bsvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;"
+          edge="1" source="rag_tool" target="qsvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;"
+          edge="1" source="qsvc" target="esvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Services → External -->
+        <mxCell id="e12" value="Bedrock API"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#01A88D;"
+          edge="1" source="bsvc" target="bedrock_icon" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e13"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#01A88D;"
+          edge="1" source="esvc" target="bedrock_icon" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" value="gRPC / HTTP"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#DC244C;"
+          edge="1" source="qsvc" target="qdrant_ext" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e15"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#C925D1;"
+          edge="1" source="csvc" target="dynamo" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Langfuse traces (dashed orange) -->
+        <mxCell id="e18" value="traces"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeWidth=2;strokeColor=#FF5C00;endArrow=open;endFill=0;"
+          edge="1" source="routes" target="langfuse_ext" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Infrastructure flows -->
+        <mxCell id="e19" value="S3 trigger"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#7AA116;"
+          edge="1" source="s3_bucket" target="lambda_ing" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e20" value="upsert docs"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#ED7100;"
+          edge="1" source="lambda_ing" target="qsvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e21"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;"
+          edge="1" source="eventbridge" target="lambda_eval" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e22" value="inject creds"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#DD344C;endArrow=open;endFill=0;"
+          edge="1" source="secrets" target="bsvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e23" value="inject creds"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#DD344C;endArrow=open;endFill=0;"
+          edge="1" source="secrets" target="qsvc" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
