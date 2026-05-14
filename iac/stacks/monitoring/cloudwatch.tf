@@ -8,16 +8,6 @@ resource "aws_cloudwatch_log_group" "eval_runner" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "golden_dataset_runner" {
-  name              = "/aws/lambda/${var.golden_dataset_runner_name}"
-  retention_in_days = var.log_retention_days
-
-  tags = {
-    Environment = var.env
-    Project     = var.project
-  }
-}
-
 resource "aws_cloudwatch_log_group" "pca_runner" {
   name              = "/aws/lambda/${var.pca_runner_name}"
   retention_in_days = var.log_retention_days
@@ -51,7 +41,6 @@ resource "aws_cloudwatch_dashboard" "llmops" {
           stat   = "Sum"
           metrics = [
             ["AWS/Lambda", "Errors", "FunctionName", var.eval_runner_name],
-            ["AWS/Lambda", "Errors", "FunctionName", var.golden_dataset_runner_name],
             ["AWS/Lambda", "Errors", "FunctionName", var.pca_runner_name],
             ["AWS/Lambda", "Errors", "FunctionName", var.qdrant_ingestion_name]
           ]
@@ -65,7 +54,6 @@ resource "aws_cloudwatch_dashboard" "llmops" {
           stat   = "Average"
           metrics = [
             ["AWS/Lambda", "Duration", "FunctionName", var.eval_runner_name],
-            ["AWS/Lambda", "Duration", "FunctionName", var.golden_dataset_runner_name],
             ["AWS/Lambda", "Duration", "FunctionName", var.pca_runner_name],
             ["AWS/Lambda", "Duration", "FunctionName", var.qdrant_ingestion_name]
           ]

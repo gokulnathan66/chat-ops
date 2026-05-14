@@ -14,10 +14,6 @@ variable "hitl_table" {
   type    = string
   default = "hitl_queue"
 }
-variable "golden_results_table" {
-  type    = string
-  default = "golden_results"
-}
 variable "s3_bucket_name" {
   description = "Bucket name; auto-generated from account ID if empty"
   type        = string

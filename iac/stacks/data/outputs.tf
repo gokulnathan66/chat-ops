@@ -17,7 +17,3 @@ output "evaluations_table" {
 output "hitl_table" {
   value = aws_dynamodb_table.hitl_queue.name
 }
-
-output "golden_results_table" {
-  value = aws_dynamodb_table.golden_results.name
-}

@@ -1,0 +1,7 @@
+app.tfvars
+common.tfvars
+data.tfvars
+evaluations.tfvars
+monitoring.tfvars
+security.tfvars
+evaluations.tfvars

@@ -20,9 +20,9 @@ resource "aws_secretsmanager_secret_version" "app" {
     LANGFUSE_SECRET_KEY  = var.langfuse_secret_key
     LANGFUSE_HOST        = var.langfuse_host
     S3_BUCKET_NAME       = var.s3_bucket_name
-    CONVERSATIONS_TABLE  = var.conversations_table
-    EVALUATIONS_TABLE    = var.evaluations_table
-    HITL_TABLE           = var.hitl_table
-    GOLDEN_RESULTS_TABLE = var.golden_results_table
+    CONVERSATIONS_TABLE       = var.conversations_table
+    EVALUATIONS_TABLE         = var.evaluations_table
+    HITL_TABLE                = var.hitl_table
+    LAMBDA_INGESTION_FUNCTION = "${var.project}-${var.env}-qdrant-ingestion"
   })
 }

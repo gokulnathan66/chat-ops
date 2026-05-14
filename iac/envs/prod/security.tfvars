@@ -11,5 +11,4 @@ s3_bucket_name    = ""
 
 conversations_table  = ""
 evaluations_table    = ""
-hitl_table           = ""
-golden_results_table = ""
+hitl_table = ""

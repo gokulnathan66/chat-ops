@@ -45,9 +45,7 @@ resource "aws_iam_role_policy" "dynamodb" {
         "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.evaluations_table}",
         "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.evaluations_table}/index/*",
         "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.hitl_table}",
-        "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.hitl_table}/index/*",
-        "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.golden_results_table}",
-        "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.golden_results_table}/index/*"
+        "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.hitl_table}/index/*"
       ]
     }]
   })
@@ -99,6 +97,20 @@ resource "aws_iam_role_policy" "bedrock" {
       Effect   = "Allow"
       Action   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
       Resource = "*"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_invoke" {
+  name = "lambda-invoke"
+  role = aws_iam_role.lambda_exec.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["lambda:InvokeFunction"]
+      Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project}-${var.env}-eval-runner"
     }]
   })
 }

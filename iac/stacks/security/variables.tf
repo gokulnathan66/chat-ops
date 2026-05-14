@@ -64,8 +64,3 @@ variable "hitl_table" {
   type    = string
   default = ""
 }
-
-variable "golden_results_table" {
-  type    = string
-  default = ""
-}

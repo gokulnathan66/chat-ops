@@ -11,10 +11,6 @@ variable "eval_runner_name" {
   type = string
 }
 
-variable "golden_dataset_runner_name" {
-  type = string
-}
-
 variable "pca_runner_name" {
   type = string
 }

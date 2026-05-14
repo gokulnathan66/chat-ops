@@ -2,10 +2,6 @@ output "eval_runner_name" {
   value = aws_lambda_function.eval_runner.function_name
 }
 
-output "golden_dataset_runner_name" {
-  value = aws_lambda_function.golden_dataset_runner.function_name
-}
-
 output "pca_runner_name" {
   value = aws_lambda_function.pca_runner.function_name
 }
