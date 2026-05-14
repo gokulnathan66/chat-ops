@@ -50,7 +50,14 @@ export default function HitlPage() {
             <p className="text-gray-400 dark:text-gray-500 text-sm px-4 py-6">None resolved yet.</p>
           )}
           {resolved.map((item) => (
-            <div key={item.sk} className="px-4 py-2.5 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+            <div key={item.sk} className="px-4 py-2.5 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+              <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded border flex-shrink-0 ${
+                item.hitl_type === 'approval'
+                  ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                  : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+              }`}>
+                {item.hitl_type === 'approval' ? 'APPROVAL' : 'ESCALATION'}
+              </span>
               <CopyId id={item.session_id} />
               <span className="flex-1 text-xs text-gray-500 dark:text-gray-400 truncate">{item.human_response?.slice(0, 80)}</span>
               <span className="text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0 font-mono">{item.resolved_at ? new Date(item.resolved_at).toLocaleString() : ''}</span>

@@ -14,7 +14,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNewChat 
       <div className="px-3 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
         <div>
           <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">Sessions</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sessions.length} active</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={onNewChat}

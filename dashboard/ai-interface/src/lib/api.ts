@@ -24,9 +24,11 @@ export interface LocalTurn extends Turn {
   error?: boolean;
 }
 
+export type SessionStatus = 'active' | 'complete' | 'hitl_pending' | 'approval_pending';
+
 export interface Session {
   session_id: string;
-  status: string;
+  status: SessionStatus;
   last_updated_at: string;
   turn_count: number;
 }
@@ -56,6 +58,15 @@ export async function fetchConversation(sessionId: string): Promise<Conversation
   const res = await fetch(`${BASE}/conversations/${sessionId}`);
   if (!res.ok) throw new Error('Failed to fetch conversation');
   return res.json();
+}
+
+export async function fetchSessionMeta(sessionId: string): Promise<Session | null> {
+  try {
+    const conv = await fetchConversation(sessionId);
+    return conv.metadata as Session;
+  } catch {
+    return null;
+  }
 }
 
 export async function sendMessage(params: {

@@ -6,12 +6,18 @@ export interface HitlItem {
   session_id: string;
   queue_status: string;
   trigger: string;
+  hitl_type?: 'escalation' | 'approval';
   conversation_summary: string;
   rag_score: string;
   llm_judge_score: string;
   created_at: string;
   human_response?: string;
   resolved_at?: string;
+  // approval-specific
+  action_type?: string;
+  action_description?: string;
+  risk_level?: string;
+  turn_n?: string;
 }
 
 export interface IngestionJob {
@@ -42,13 +48,13 @@ export interface MetricsSummary {
   avg_faithfulness: number;
   cost_today_usd: number;
   hitl_pending: number;
-  golden_pass_rate_pct: number;
 }
 
 export interface EvalRecord {
   session_id: string;
   sk: string;
   eval_type: string;
+  query?: string;
   rag_score?: string;
   faithfulness?: string;
   relevance?: string;
@@ -57,20 +63,45 @@ export interface EvalRecord {
   pca_topics?: string[];
   pca_sentiment?: string;
   pca_unresolved?: string[];
+  // pca_alert fields
+  negative_ratio?: string;
+  avg_unresolved?: string;
+  sessions_analyzed?: string;
+  summary?: string;
   created_at: string;
 }
 
-export interface GoldenResult {
-  run_id: string;
-  question_id: string;
-  question: string;
-  expected_answer: string;
-  actual_answer: string;
-  faithfulness: string;
-  relevance: string;
-  llm_judge_score: string;
-  pass: boolean;
-  run_at: string;
+export interface IngestedDoc {
+  doc_id: string;
+  title: string;
+  source: string;
+  url_or_file_path: string;
+  tags: string[];
+  created_at: string;
+  chunk_count: number;
+}
+
+export interface GoldenQuery {
+  session_id: string;
+  sk: string;
+  eval_type: string;
+  query: string;
+  created_at: string;
+}
+
+export interface ConversationTurn {
+  sk: string;
+  user_query: string;
+  ai_response: string;
+  route: string;
+  intent: string;
+  created_at: string;
+}
+
+export async function fetchConversation(sessionId: string): Promise<{ turns: ConversationTurn[] }> {
+  const res = await fetch(`${BASE}/conversations/${encodeURIComponent(sessionId)}`);
+  if (!res.ok) throw new Error('Failed to fetch conversation');
+  return res.json();
 }
 
 export async function fetchHitlQueue(status = 'pending'): Promise<HitlItem[]> {
@@ -86,6 +117,23 @@ export async function respondHitl(queueId: string, humanResponse: string): Promi
     body: JSON.stringify({ human_response: humanResponse }),
   });
   if (!res.ok) throw new Error('Failed to submit HITL response');
+}
+
+export async function resolveHitl(queueId: string): Promise<void> {
+  const res = await fetch(`${BASE}/hitl/${encodeURIComponent(queueId)}/resolve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error('Failed to resolve HITL');
+}
+
+export async function approveHitl(queueId: string, decision: 'approve' | 'reject', note = ''): Promise<void> {
+  const res = await fetch(`${BASE}/hitl/${encodeURIComponent(queueId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision, note }),
+  });
+  if (!res.ok) throw new Error('Failed to submit approval decision');
 }
 
 export async function startIngestion(s3Key: string): Promise<StartIngestionResult> {
@@ -121,6 +169,17 @@ export async function getIngestionHistory(limit = 20): Promise<IngestionJob[]> {
   return res.json();
 }
 
+export async function fetchIngestedDocs(): Promise<IngestedDoc[]> {
+  const res = await fetch(`${BASE}/ingestion/docs`);
+  if (!res.ok) throw new Error('Failed to fetch ingested documents');
+  return res.json();
+}
+
+export async function deleteIngestedDoc(docId: string): Promise<void> {
+  const res = await fetch(`${BASE}/ingestion/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete document');
+}
+
 export async function fetchMetrics(): Promise<MetricsSummary> {
   const res = await fetch(`${BASE}/metrics/summary`);
   if (!res.ok) throw new Error('Failed to fetch metrics');
@@ -133,9 +192,35 @@ export async function fetchEvaluations(evalType = 'rag', limit = 50): Promise<Ev
   return res.json();
 }
 
-export async function fetchGoldenResults(runId?: string): Promise<GoldenResult[]> {
-  const url = runId ? `${BASE}/golden-results?run_id=${runId}` : `${BASE}/golden-results`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch golden results');
+export async function fetchGoldenQueries(): Promise<GoldenQuery[]> {
+  const res = await fetch(`${BASE}/golden-queries`);
+  if (!res.ok) throw new Error('Failed to fetch golden queries');
   return res.json();
 }
+
+export async function addGoldenQuery(query: string): Promise<GoldenQuery> {
+  const res = await fetch(`${BASE}/golden-queries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error('Failed to add question');
+  return res.json();
+}
+
+export async function updateGoldenQuery(queryId: string, query: string): Promise<void> {
+  const res = await fetch(`${BASE}/golden-queries/${encodeURIComponent(queryId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error('Failed to update question');
+}
+
+export async function deleteGoldenQuery(queryId: string): Promise<void> {
+  const res = await fetch(`${BASE}/golden-queries/${encodeURIComponent(queryId)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete question');
+}
+

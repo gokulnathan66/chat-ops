@@ -12,8 +12,7 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
 
 export default function KpiCards({ metrics }: { metrics: MetricsSummary }) {
   return (
-    <div className="grid grid-cols-5 gap-3">
-      <KpiCard label="Golden Pass Rate" value={`${metrics.golden_pass_rate_pct}%`} sub="regression suite" />
+    <div className="grid grid-cols-4 gap-3">
       <KpiCard label="Avg RAG Score" value={metrics.avg_rag_score.toFixed(2)} sub="cosine similarity" />
       <KpiCard label="Avg Faithfulness" value={metrics.avg_faithfulness.toFixed(2)} sub="LLM judge" />
       <KpiCard label="Cost Today" value={`$${metrics.cost_today_usd.toFixed(4)}`} sub="USD" />

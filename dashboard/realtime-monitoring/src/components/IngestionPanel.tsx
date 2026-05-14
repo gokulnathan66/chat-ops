@@ -5,7 +5,10 @@ import {
   uploadAndIngest,
   getIngestionStatus,
   getIngestionHistory,
+  fetchIngestedDocs,
+  deleteIngestedDoc,
   type IngestionJob,
+  type IngestedDoc,
   type StartIngestionResult,
 } from '@/lib/api';
 
@@ -121,6 +124,63 @@ function DropZone({ onFile }: { onFile: (f: File) => void }) {
   );
 }
 
+function DocRow({ doc, onDelete }: { doc: IngestedDoc; onDelete: (id: string) => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const filename = doc.url_or_file_path?.split('/').pop() || doc.title || doc.doc_id.slice(0, 12);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteIngestedDoc(doc.doc_id);
+      onDelete(doc.doc_id);
+    } catch {
+      setDeleting(false);
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0 gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{filename}</p>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono truncate">{doc.url_or_file_path}</p>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+          {doc.chunk_count} chunks · {fmt(doc.created_at)}
+        </p>
+      </div>
+      <div className="flex-shrink-0">
+        {confirming ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Delete?</span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-700 disabled:opacity-50"
+            >
+              {deleting ? '…' : 'Yes'}
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirming(true)}
+            className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1.5 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+            title="Delete from Qdrant"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function IngestionPanel() {
   const [tab, setTab] = useState<Tab>('upload');
 
@@ -136,6 +196,9 @@ export default function IngestionPanel() {
   const [history, setHistory] = useState<IngestionJob[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  const [docs, setDocs] = useState<IngestedDoc[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+
   const clearPoll = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
 
   useEffect(() => () => clearPoll(), []);
@@ -149,6 +212,7 @@ export default function IngestionPanel() {
         if (job.status === 'completed' || job.status === 'error') {
           clearPoll();
           loadHistory();
+          loadDocs();
         }
       } catch { /* keep polling */ }
     }, POLL_MS);
@@ -159,7 +223,12 @@ export default function IngestionPanel() {
     try { setHistory(await getIngestionHistory(10)); } catch { /* noop */ } finally { setHistoryLoading(false); }
   };
 
-  useEffect(() => { loadHistory(); }, []);
+  const loadDocs = async () => {
+    setDocsLoading(true);
+    try { setDocs(await fetchIngestedDocs()); } catch { /* noop */ } finally { setDocsLoading(false); }
+  };
+
+  useEffect(() => { loadHistory(); loadDocs(); }, []);
 
   const handleResult = (result: StartIngestionResult) => {
     setActiveJob({
@@ -271,6 +340,32 @@ export default function IngestionPanel() {
           )}
         </div>
       )}
+
+      {/* Ingested documents */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            Ingested Documents
+            {docs.length > 0 && <span className="ml-2 text-gray-400 font-normal normal-case">({docs.length})</span>}
+          </h3>
+          <button onClick={loadDocs} className="btn-ghost text-xs py-1">Refresh</button>
+        </div>
+        <div className="card overflow-hidden">
+          {docsLoading ? (
+            <p className="text-sm text-gray-400 py-6 text-center">Loading…</p>
+          ) : docs.length === 0 ? (
+            <p className="text-sm text-gray-400 py-6 text-center">No documents in vector store.</p>
+          ) : (
+            docs.map((doc) => (
+              <DocRow
+                key={doc.doc_id}
+                doc={doc}
+                onDelete={(id) => setDocs((prev) => prev.filter((d) => d.doc_id !== id))}
+              />
+            ))
+          )}
+        </div>
+      </div>
 
       {/* Job history */}
       <div className="space-y-2">
