@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     )
 
     # llm
-    MODEL_ID: str = "gpt-3.5-turbo"
+    MODEL_ID: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
     TEMPERATURE: float = 0.7
     MAX_TOKENS: int = 2048
     # qdrant settings
@@ -40,7 +40,6 @@ class Settings(BaseSettings):
     CONVERSATIONS_TABLE: str = "conversations"
     EVALUATIONS_TABLE: str = "evaluations"
     HITL_TABLE: str = "hitl_queue"
-    GOLDEN_RESULTS_TABLE: str = "golden_results"
 
     # Embedding / chunking
     embedding_model: str = "amazon.titan-embed-text-v2:0"
@@ -53,8 +52,15 @@ class Settings(BaseSettings):
     INACTIVITY_MINUTES: int = 15
     RAG_THRESHOLD: float = 0.6
     HITL_THRESHOLD: float = 0.6
-    GOLDEN_PASS_THRESHOLD: float = 0.7
     RAG_RERANK_TOP_K_MULTIPLIER: int = 2
+
+    # Lambda references
+    LAMBDA_EVAL_RUNNER_FUNCTION: str = "llmops-dev-eval-runner"
+
+    # PCA degradation detection
+    PCA_DEGRADATION_WINDOW: int = 10
+    PCA_DEGRADATION_THRESHOLD: float = 0.6
+    PCA_UNRESOLVED_THRESHOLD: int = 3
 
 settings = Settings()
 

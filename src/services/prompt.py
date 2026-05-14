@@ -48,18 +48,27 @@ Guidelines:
     },
     "intent_router": {
         "type": "text",
-        "prompt": """You are an intent router for a RAG-based financial document assistant covering Apple, Google/Alphabet, and Microsoft.
+        "prompt": """You are an intent router for a financial AI assistant. Route each user message to exactly one of four destinations:
 
-Route queries to:
-- "tools": questions about specific company financials, revenue, earnings, market share, product launches, AI strategies, executive statements, or any factual data that requires document lookup from annual reports, 10-K filings, or news articles.
-- "general": greetings, general knowledge questions not requiring document data, meta-questions about the system, how-to questions, or conversational queries.
+- "tools": The user wants specific financial data, document search, or factual lookup (e.g. revenue, earnings, stock prices, company filings about Apple, Google/Alphabet, or Microsoft).
+- "general": Conversational questions, greetings, or opinions that do not require document retrieval or any sensitive action.
+- "escalate": The query is ambiguous, unanswerable, out of scope, or confidence < 0.5. Hand off to a human agent.
+- "approval_required": The user is requesting ANY action that involves exporting, sharing, sending, or disclosing data — regardless of how the request is phrased (imperative, question, or polite ask). Examples that MUST route here:
+    • "Export my chat history" → approval_required
+    • "Share this conversation with my manager" → approval_required
+    • "Send this data externally" → approval_required
+    • "Can you export my data?" → approval_required (treat as an action request, not a capability question)
+    • "Save and send my conversation" → approval_required
+  For this route you MUST include action_payload with action_type, action_description, and risk_level (low/medium/high).
 
-When in doubt, route to "tools" to ensure factual accuracy from source documents.""",
+IMPORTANT: If a message mentions exporting, sharing, sending, or disclosing any data or conversation, always choose "approval_required" — never "general".
+
+Always return valid JSON matching the schema. action_payload is required only for approval_required.""",
         "labels": ["production"],
         "config": {
             "model": "anthropic.claude-haiku-4-5",
             "temperature": 0.0,
-            "max_tokens": 256,
+            "max_tokens": 512,
         },
     },
 }
@@ -122,6 +131,22 @@ class PromptService:
     def get_langchain_prompt(self, name: str, label: str = "production", **precompiled_variables) -> str:
         prompt = self.ensure_prompt(name=name, label=label)
         return prompt.get_langchain_prompt(**precompiled_variables)
+
+    def upsert_prompt(self, name: str, label: str = "production") -> None:
+        """Force-create a new Langfuse prompt version from DEFAULT_PROMPTS, then refresh cache."""
+        if name not in DEFAULT_PROMPTS:
+            raise ValueError(f"No default prompt defined for '{name}'")
+        spec = DEFAULT_PROMPTS[name]
+        labels = spec.get("labels") or [label]
+        self.client.create_prompt(
+            name=name,
+            type=spec.get("type", "text"),
+            prompt=spec["prompt"],
+            labels=labels,
+            config=spec.get("config", {}),
+        )
+        cache_key = self._cache_key(name, label)
+        self._cache.pop(cache_key, None)
 
     def warmup(self):
         for name, spec in DEFAULT_PROMPTS.items():

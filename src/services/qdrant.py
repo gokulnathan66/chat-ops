@@ -11,6 +11,7 @@ from qdrant_client.models import (
     Distance,
     FieldCondition,
     Filter,
+    MatchValue,
     MatchAny,
     PointStruct,
     VectorParams,
@@ -119,6 +120,56 @@ class QdrantService:
             points=points,
             wait=True,
         )
+
+    def list_documents(self) -> list[dict[str, Any]]:
+        """Return one record per unique doc_id with metadata and chunk count."""
+        self.ensure_collection()
+        seen: dict[str, dict[str, Any]] = {}
+        offset = None
+
+        while True:
+            results, next_offset = self.client.scroll(
+                collection_name=settings.QDRANT_COLLECTION,
+                scroll_filter=None,
+                limit=250,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            for point in results:
+                p = point.payload or {}
+                doc_id = p.get("doc_id")
+                if not doc_id:
+                    continue
+                if doc_id not in seen:
+                    seen[doc_id] = {
+                        "doc_id": doc_id,
+                        "title": p.get("title", ""),
+                        "source": p.get("source", ""),
+                        "url_or_file_path": p.get("url_or_file_path", ""),
+                        "tags": p.get("tags", []),
+                        "created_at": p.get("created_at", ""),
+                        "chunk_count": 0,
+                    }
+                seen[doc_id]["chunk_count"] += 1
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        return sorted(seen.values(), key=lambda d: d["created_at"], reverse=True)
+
+    def delete_by_doc_id(self, doc_id: str) -> int:
+        """Delete all points belonging to a doc_id. Returns count deleted."""
+        self.ensure_collection()
+        self.client.delete(
+            collection_name=settings.QDRANT_COLLECTION,
+            points_selector=Filter(
+                must=[FieldCondition(key="doc_id", match=MatchValue(value=doc_id))]
+            ),
+            wait=True,
+        )
+        return 0
 
     def semantic_search(
         self,

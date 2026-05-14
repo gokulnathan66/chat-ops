@@ -94,7 +94,107 @@ class ConversationService:
         )
         return response.get("Items", [])
 
-    def write_hitl(self, session_id: str, trigger: str, scores: dict) -> None:
+    def write_cost(self, session_id: str, token_usage: dict, model_id: str) -> None:
+        # Claude Haiku 4.5 pricing: $0.80/M input, $4.00/M output (on-demand)
+        input_cost = token_usage.get("input", 0) * 0.80 / 1_000_000
+        output_cost = token_usage.get("output", 0) * 4.00 / 1_000_000
+        cost_usd = round(input_cost + output_cost, 8)
+        now = datetime.now(UTC).isoformat()
+        eval_table = self._dynamodb.Table(settings.EVALUATIONS_TABLE)
+        eval_table.put_item(Item={
+            "session_id": session_id,
+            "sk": f"eval#cost#{now}",
+            "eval_type": "cost",
+            "model_id": model_id,
+            "input_tokens": str(token_usage.get("input", 0)),
+            "output_tokens": str(token_usage.get("output", 0)),
+            "cost_usd": str(cost_usd),
+            "created_at": now,
+        })
+
+    def mark_hitl_pending(self, session_id: str) -> None:
+        now = datetime.now(UTC).isoformat()
+        self._table.update_item(
+            Key={"session_id": session_id, "sk": "metadata"},
+            UpdateExpression="SET #s = :s, last_updated_at = :now",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={":s": "hitl_pending", ":now": now},
+        )
+
+    def mark_approval_pending(self, session_id: str) -> None:
+        now = datetime.now(UTC).isoformat()
+        self._table.update_item(
+            Key={"session_id": session_id, "sk": "metadata"},
+            UpdateExpression="SET #s = :s, last_updated_at = :now",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={":s": "approval_pending", ":now": now},
+        )
+
+    def write_human_turn(self, session_id: str, turn_n: int, human_response: str) -> None:
+        now = datetime.now(UTC).isoformat()
+        self._table.put_item(Item={
+            "session_id": session_id,
+            "sk": f"turn#{turn_n:03d}",
+            "user_query": "",
+            "ai_response": human_response,
+            "intent": "human",
+            "route": "human",
+            "retrieved_docs": [],
+            "token_usage": _floats_to_decimals({"input": 0, "output": 0}),
+            "latency_ms": Decimal("0"),
+            "created_at": now,
+        })
+        self._table.update_item(
+            Key={"session_id": session_id, "sk": "metadata"},
+            UpdateExpression=(
+                "SET last_updated_at = :now, "
+                "turn_count = if_not_exists(turn_count, :zero) + :one"
+            ),
+            ExpressionAttributeValues={
+                ":now": now,
+                ":zero": 0,
+                ":one": 1,
+            },
+        )
+
+    def write_user_turn_hitl(self, session_id: str, turn_n: int, user_query: str) -> None:
+        """Write a user message during HITL without changing session status."""
+        now = datetime.now(UTC).isoformat()
+        self._table.put_item(Item={
+            "session_id": session_id,
+            "sk": f"turn#{turn_n:03d}",
+            "user_query": user_query,
+            "ai_response": "",
+            "intent": "hitl_user_reply",
+            "route": "hitl_pending",
+            "retrieved_docs": [],
+            "token_usage": _floats_to_decimals({"input": 0, "output": 0}),
+            "latency_ms": Decimal("0"),
+            "created_at": now,
+        })
+        self._table.update_item(
+            Key={"session_id": session_id, "sk": "metadata"},
+            UpdateExpression=(
+                "SET last_updated_at = :now, "
+                "turn_count = if_not_exists(turn_count, :zero) + :one"
+            ),
+            ExpressionAttributeValues={
+                ":now": now,
+                ":zero": 0,
+                ":one": 1,
+            },
+        )
+
+    def mark_session_active(self, session_id: str) -> None:
+        now = datetime.now(UTC).isoformat()
+        self._table.update_item(
+            Key={"session_id": session_id, "sk": "metadata"},
+            UpdateExpression="SET #s = :active, last_updated_at = :now",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={":active": "active", ":now": now},
+        )
+
+    def write_hitl(self, session_id: str, trigger: str, scores: dict, extras: dict | None = None) -> None:
         now = datetime.now(UTC).isoformat()
         hitl_table = self._dynamodb.Table(settings.HITL_TABLE)
         conv = self.get_conversation(session_id)
@@ -102,17 +202,21 @@ class ConversationService:
         summary = " | ".join(
             f"Q: {t.get('user_query', '')} A: {t.get('ai_response', '')}" for t in last_5
         )
-        hitl_table.put_item(Item={
+        item: dict = {
             "pk": "HITL",
             "sk": f"{now}#{session_id}",
             "session_id": session_id,
             "queue_status": "pending",
             "trigger": trigger,
+            "hitl_type": "escalation",
             "conversation_summary": summary,
             "rag_score": str(scores.get("rag_score", "")),
             "llm_judge_score": str(scores.get("llm_judge_score", "")),
             "created_at": now,
-        })
+        }
+        if extras:
+            item.update(extras)
+        hitl_table.put_item(Item=item)
 
     def resolve_hitl(self, queue_id: str, human_response: str) -> None:
         from botocore.exceptions import ClientError

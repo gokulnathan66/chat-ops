@@ -89,6 +89,7 @@ def tools_node(state: GraphState):
             "latency_ms": latency_ms,
         },
     )
+    conversation_svc.write_cost(state["session_id"], token_usage, bedrock_service.model_id)
 
     return Command(
         update={

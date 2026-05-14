@@ -14,3 +14,4 @@ class GraphState(TypedDict):
     token_usage: NotRequired[dict]
     latency_ms: NotRequired[float]
     reason: NotRequired[str]
+    action_payload: NotRequired[dict]

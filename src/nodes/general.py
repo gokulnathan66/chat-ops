@@ -44,6 +44,10 @@ def general_node(state: GraphState) -> Command:
 
     token_usage = response.get("usage", {})
 
+    normalized_usage = {
+        "input": token_usage.get("inputTokens", 0),
+        "output": token_usage.get("outputTokens", 0),
+    }
     conversation_svc.write_turn(
         session_id=state["session_id"],
         turn_n=state["turn"],
@@ -53,13 +57,11 @@ def general_node(state: GraphState) -> Command:
             "intent": state.get("intent", "general"),
             "route": "general",
             "retrieved_docs": [],
-            "token_usage": {
-                "input": token_usage.get("inputTokens", 0),
-                "output": token_usage.get("outputTokens", 0),
-            },
+            "token_usage": normalized_usage,
             "latency_ms": latency_ms,
         },
     )
+    conversation_svc.write_cost(state["session_id"], normalized_usage, bedrock_service.model_id)
 
     return Command(
         update={"message": response_text},
