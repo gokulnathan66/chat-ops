@@ -44,8 +44,12 @@ log "Copying application code..."
 # src/ package (services, tools, schema, setting, states)
 cp -r "$ROOT/src" "$BUILD_DIR/src"
 
-# evaluations/ package (eval_runner, golden_dataset_runner, pca, rag_evaluator)
+# evaluations/ package — kept as a package so internal imports (evaluations.rag_evaluator) resolve
 cp -r "$ROOT/evaluations" "$BUILD_DIR/evaluations"
+
+# Lambda handler entry points must be at the zip root (Lambda resolves handler as <module>.<function>)
+cp "$ROOT/evaluations/eval_runner.py" "$BUILD_DIR/eval_runner.py"
+cp "$ROOT/evaluations/pca.py"         "$BUILD_DIR/pca.py"
 
 # qdrant_ingestion Lambda — lives in data/ but is deployed as a top-level module
 cp "$ROOT/data/qdrant_ingestion.py" "$BUILD_DIR/qdrant_ingestion.py"

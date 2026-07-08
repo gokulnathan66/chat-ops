@@ -45,7 +45,6 @@ Not just connecting a RAG pipeline to an LLM and deploying a demo — but buildi
 
 Tech stack: FastAPI · LangGraph · LangChain · AWS Bedrock · Claude Haiku 4.5 · Qdrant · DynamoDB · S3 · Lambda · Langfuse · Next.js 14 · Terraform
 
-Happy to answer questions or do a deeper walkthrough of any part of the architecture.
 
 #LLMOps #RAG #LangGraph #AWS #GenerativeAI #ProductionAI #MLOps #BuildInPublic
 
